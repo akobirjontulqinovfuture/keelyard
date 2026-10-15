@@ -1,0 +1,2539 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Make coding agents prove their work, undo any step, and keep their context small.">
+      
+      
+      
+      
+        <link rel="prev" href="../guide/agents/">
+      
+      
+        <link rel="next" href="../mcp/">
+      
+      
+        
+      
+      
+      <link rel="icon" href="../assets/logo.svg">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.7">
+    
+    
+      
+        <title>CLI - keelyard</title>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/stylesheets/main.ec1eaa64.min.css">
+      
+        
+        <link rel="stylesheet" href="../assets/stylesheets/palette.ab4e12ef.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+    
+    
+      <link rel="stylesheet" href="../assets/extra.css">
+    
+    <script>__md_scope=new URL("..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#cli-reference" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href=".." title="keelyard" class="md-header__button md-logo" aria-label="keelyard" data-md-component="logo">
+      
+  <img src="../assets/logo.svg" alt="logo">
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            keelyard
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              CLI
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: light)" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Dark mode"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Dark mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="m17.75 4.09-2.53 1.94.91 3.06-2.63-1.81-2.63 1.81.91-3.06-2.53-1.94L12.44 4l1.06-3 1.06 3zm3.5 6.91-1.64 1.25.59 1.98-1.7-1.17-1.7 1.17.59-1.98L15.75 11l2.06-.05L18.5 9l.69 1.95zm-2.28 4.95c.83-.08 1.72 1.1 1.19 1.85-.32.45-.66.87-1.08 1.27C15.17 23 8.84 23 4.94 19.07c-3.91-3.9-3.91-10.24 0-14.14.4-.4.82-.76 1.27-1.08.75-.53 1.93.36 1.85 1.19-.27 2.86.69 5.83 2.89 8.02a9.96 9.96 0 0 0 8.02 2.89m-1.64 2.02a12.08 12.08 0 0 1-7.8-3.47c-2.17-2.19-3.33-5-3.49-7.82-2.81 3.14-2.7 7.96.31 10.98 3.02 3.01 7.84 3.12 10.98.31"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: dark)" data-md-color-scheme="slate" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Light mode"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Light mode" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 7a5 5 0 0 1 5 5 5 5 0 0 1-5 5 5 5 0 0 1-5-5 5 5 0 0 1 5-5m0 2a3 3 0 0 0-3 3 3 3 0 0 0 3 3 3 3 0 0 0 3-3 3 3 0 0 0-3-3m0-7 2.39 3.42C13.65 5.15 12.84 5 12 5s-1.65.15-2.39.42zM3.34 7l4.16-.35A7.2 7.2 0 0 0 5.94 8.5c-.44.74-.69 1.5-.83 2.29zm.02 10 1.76-3.77a7.131 7.131 0 0 0 2.38 4.14zM20.65 7l-1.77 3.79a7.02 7.02 0 0 0-2.38-4.15zm-.01 10-4.14.36c.59-.51 1.12-1.14 1.54-1.86.42-.73.69-1.5.83-2.29zM12 22l-2.41-3.44c.74.27 1.55.44 2.41.44.82 0 1.63-.17 2.37-.44z"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/akobirjontulqinovfuture/keelyard" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+  </div>
+  <div class="md-source__repository">
+    keelyard
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href=".." title="keelyard" class="md-nav__button md-logo" aria-label="keelyard" data-md-component="logo">
+      
+  <img src="../assets/logo.svg" alt="logo">
+
+    </a>
+    keelyard
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/akobirjontulqinovfuture/keelyard" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+  </div>
+  <div class="md-source__repository">
+    keelyard
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href=".." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../quickstart/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Quickstart
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Guide
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Guide
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../guide/proof/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Proof gate
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../guide/rewind/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Rewind
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../guide/context/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Smaller context
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../guide/memory/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Memory and usage
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../guide/brain/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Always on
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../guide/swarm/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Swarm
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../guide/arena/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Arena
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../guide/agents/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    For agents
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Reference
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Reference
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CLI
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CLI
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#init" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        init
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#doctor" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        doctor
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#status" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        status
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#selftest" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        selftest
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#rewind" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        rewind
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="rewind">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#rewind-list" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        rewind list
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#rewind-show" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        rewind show
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#rewind-to" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        rewind to
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#rewind-fork" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        rewind fork
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#rewind-snap" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        rewind snap
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#proof" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        proof
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="proof">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#proof-status" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        proof status
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#proof-add" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        proof add
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#proof-check" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        proof check
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#proof-test" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        proof test
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#proof-shot" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        proof shot
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#proof-report" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        proof report
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#run" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        run
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#filter" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        filter
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#recall" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        recall
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#code" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        code
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="code">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#code-outline" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        code outline
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#code-map" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        code map
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#code-find" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        code find
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#memory" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        memory
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="memory">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#memory-index" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        memory index
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#memory-search" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        memory search
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#memory-stats" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        memory stats
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#usage" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        usage
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#swarm" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        swarm
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="swarm">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#swarm-run" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        swarm run
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#arena" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        arena
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="arena">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#arena-run" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        arena run
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#arena-render" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        arena render
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#bench" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        bench
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#install" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        install
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#uninstall" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        uninstall
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../mcp/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    MCP tools
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../config/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Configuration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../json/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Exit codes and JSON
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../troubleshooting/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Troubleshooting
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../BENCHMARKS/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Benchmarks
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../landscape/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Landscape
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../feature-matrix/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Feature matrix
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#init" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        init
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#doctor" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        doctor
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#status" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        status
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#selftest" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        selftest
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#rewind" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        rewind
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="rewind">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#rewind-list" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        rewind list
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#rewind-show" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        rewind show
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#rewind-to" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        rewind to
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#rewind-fork" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        rewind fork
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#rewind-snap" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        rewind snap
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#proof" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        proof
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="proof">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#proof-status" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        proof status
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#proof-add" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        proof add
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#proof-check" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        proof check
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#proof-test" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        proof test
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#proof-shot" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        proof shot
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#proof-report" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        proof report
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#run" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        run
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#filter" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        filter
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#recall" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        recall
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#code" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        code
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="code">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#code-outline" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        code outline
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#code-map" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        code map
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#code-find" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        code find
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#memory" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        memory
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="memory">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#memory-index" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        memory index
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#memory-search" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        memory search
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#memory-stats" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        memory stats
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#usage" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        usage
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#swarm" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        swarm
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="swarm">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#swarm-run" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        swarm run
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#arena" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        arena
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="arena">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#arena-run" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        arena run
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#arena-render" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        arena render
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#bench" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        bench
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#install" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        install
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#uninstall" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        uninstall
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+  
+
+
+<h1 id="cli-reference">CLI reference<a class="headerlink" href="#cli-reference" title="Permanent link">&para;</a></h1>
+<p>Generated from <code>keelyard --help</code> by <code>docs/demo/gen_reference.py</code>.</p>
+<p>Every command accepts <code>--json</code> and prints exactly one JSON object with <code>ok</code> and <code>exit</code> keys.</p>
+<div class="highlight"><pre><span></span><code>usage: keelyard &lt;command&gt; [options]
+
+keelyard makes coding agents prove their work, lets you undo any step,
+and keeps their context small. Works with Claude Code, Codex and OpenCode.
+
+start here:
+  init              set up this project and wire every agent it finds
+  doctor            check that everything is installed and wired correctly
+  status            what keelyard knows about this project right now
+
+everyday:
+  rewind            list, inspect and undo agent steps
+  proof             the evidence an agent collected before saying "done"
+  run               run a command and print a compact version of its output
+  code              outline a file, map the project, find a symbol
+  memory            search past sessions across all your agents
+  usage             tokens and cost from your local agent logs
+
+more:
+  swarm             fan small, checkable tasks out to a cheap model
+  arena             run one task across agents and models, compare results
+  bench             measure savings on your own machine
+  selftest          a scripted agent completes a full task through the agent interface
+  install/uninstall wire or unwire one agent by hand
+  filter            compact output piped on stdin
+  recall            print the full output that `run` shortened
+
+options:
+  -h, --help   show this help message and exit
+  --version    show program's version number and exit
+
+commands:
+  &lt;command&gt;
+    init       set up this project and wire the agents found on this machine
+    doctor     check the installation and wiring; exits 3 if something is broken
+    status     show what keelyard knows about this project
+    selftest   a scripted agent runs a full task through MCP and hooks in a temp folder
+    install    wire one agent in this project
+    uninstall  unwire one agent in this project
+    rewind     list, inspect and undo agent steps
+    proof      the evidence an agent collected before saying done
+    run        run a command and print a compact version of its output
+    filter     compact output piped on stdin
+    recall     print the full output that `run` shortened
+    code       outline a file, map the project, find a symbol
+    memory     search past sessions across all your agents
+    usage      tokens and cost from your local agent logs
+    swarm      fan small, checkable tasks out to a cheap model
+    arena      run one task across agents and models, compare results
+    bench      measure savings on your own machine
+
+exit codes:
+  0  success
+  1  error (the message says what went wrong and how to fix it)
+  2  usage error (bad command or arguments)
+  3  a check did not pass (doctor found a problem, proof not complete, tests failed, selftest failed)
+  `keelyard run` exits with the code of the command it ran.
+
+Run `keelyard &lt;command&gt; --help` for examples. Every command accepts --json.
+</code></pre></div>
+<h2 id="init">init<a class="headerlink" href="#init" title="Permanent link">&para;</a></h2>
+<div class="highlight"><pre><span></span><code>usage: keelyard &lt;command&gt; [options] init [-h] [--json] [--agent {claude,codex,opencode}]
+                                         [--no-agents] [--dry-run] [--global]
+
+set up this project and wire the agents found on this machine
+
+options:
+  -h, --help            show this help message and exit
+  --json                print one JSON object on stdout (for scripts and agents)
+  --agent {claude,codex,opencode}
+                        wire only this agent (repeatable)
+  --no-agents           create the config but wire no agent
+  --dry-run             print what would change and stop
+  --global              wire the agents for every project of this user (~/.claude, ~/.codex,
+                        ~/.config/opencode); projects set themselves up on their first session
+
+examples:
+  keelyard init                    # detect agents, wire them, take a first snapshot
+  keelyard init --agent claude     # only Claude Code
+  keelyard init --dry-run          # show what would change
+</code></pre></div>
+<h2 id="doctor">doctor<a class="headerlink" href="#doctor" title="Permanent link">&para;</a></h2>
+<div class="highlight"><pre><span></span><code>usage: keelyard &lt;command&gt; [options] doctor [-h] [--json]
+
+check the installation and wiring; exits 3 if something is broken
+
+options:
+  -h, --help  show this help message and exit
+  --json      print one JSON object on stdout (for scripts and agents)
+
+examples:
+  keelyard doctor
+  keelyard doctor --json
+</code></pre></div>
+<h2 id="status">status<a class="headerlink" href="#status" title="Permanent link">&para;</a></h2>
+<div class="highlight"><pre><span></span><code>usage: keelyard &lt;command&gt; [options] status [-h] [--json]
+
+show what keelyard knows about this project
+
+options:
+  -h, --help  show this help message and exit
+  --json      print one JSON object on stdout (for scripts and agents)
+
+examples:
+  keelyard status
+  keelyard status --json
+</code></pre></div>
+<h2 id="selftest">selftest<a class="headerlink" href="#selftest" title="Permanent link">&para;</a></h2>
+<div class="highlight"><pre><span></span><code>usage: keelyard &lt;command&gt; [options] selftest [-h] [--json] [--keep]
+
+a scripted agent runs a full task through MCP and hooks in a temp folder
+
+options:
+  -h, --help  show this help message and exit
+  --json      print one JSON object on stdout (for scripts and agents)
+  --keep      keep the temporary project
+
+examples:
+  keelyard selftest
+  keelyard selftest --keep   # keep the temp project to inspect
+</code></pre></div>
+<h2 id="rewind">rewind<a class="headerlink" href="#rewind" title="Permanent link">&para;</a></h2>
+<div class="highlight"><pre><span></span><code>usage: keelyard &lt;command&gt; [options] rewind [-h] &lt;action&gt; ...
+
+list, inspect and undo agent steps
+
+options:
+  -h, --help  show this help message and exit
+
+actions:
+  &lt;action&gt;
+    list      list snapshots
+    show      show the diff a step made
+    to        restore files to a step (undoable)
+    fork      copy a step into a new folder
+    snap      take a snapshot now
+
+examples:
+  keelyard rewind                  # every step agents took, newest last
+  keelyard rewind list -i          # browse steps and diffs full-screen
+  keelyard rewind show 12          # the diff that step 12 made
+  keelyard rewind to 9             # put the files back as they were after step 9
+  keelyard rewind fork 9 ../try-b  # copy step 9 into another folder
+  keelyard rewind snap             # take a snapshot by hand
+</code></pre></div>
+<h3 id="rewind-list">rewind list<a class="headerlink" href="#rewind-list" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code>usage: keelyard &lt;command&gt; [options] rewind list [-h] [--json] [-i] [-n N]
+
+list snapshots
+
+options:
+  -h, --help         show this help message and exit
+  --json             print one JSON object on stdout (for scripts and agents)
+  -i, --interactive  open the timeline browser
+  -n N               show the last N steps (default 30)
+</code></pre></div>
+<h3 id="rewind-show">rewind show<a class="headerlink" href="#rewind-show" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code>usage: keelyard &lt;command&gt; [options] rewind show [-h] [--json] step
+
+show the diff a step made
+
+positional arguments:
+  step
+
+options:
+  -h, --help  show this help message and exit
+  --json      print one JSON object on stdout (for scripts and agents)
+</code></pre></div>
+<h3 id="rewind-to">rewind to<a class="headerlink" href="#rewind-to" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code>usage: keelyard &lt;command&gt; [options] rewind to [-h] [--json] step
+
+restore files to a step (undoable)
+
+positional arguments:
+  step
+
+options:
+  -h, --help  show this help message and exit
+  --json      print one JSON object on stdout (for scripts and agents)
+</code></pre></div>
+<h3 id="rewind-fork">rewind fork<a class="headerlink" href="#rewind-fork" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code>usage: keelyard &lt;command&gt; [options] rewind fork [-h] [--json] step dest
+
+copy a step into a new folder
+
+positional arguments:
+  step
+  dest
+
+options:
+  -h, --help  show this help message and exit
+  --json      print one JSON object on stdout (for scripts and agents)
+</code></pre></div>
+<h3 id="rewind-snap">rewind snap<a class="headerlink" href="#rewind-snap" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code>usage: keelyard &lt;command&gt; [options] rewind snap [-h] [--json]
+
+take a snapshot now
+
+options:
+  -h, --help  show this help message and exit
+  --json      print one JSON object on stdout (for scripts and agents)
+</code></pre></div>
+<h2 id="proof">proof<a class="headerlink" href="#proof" title="Permanent link">&para;</a></h2>
+<div class="highlight"><pre><span></span><code>usage: keelyard &lt;command&gt; [options] proof [-h] &lt;action&gt; ...
+
+the evidence an agent collected before saying done
+
+options:
+  -h, --help  show this help message and exit
+
+actions:
+  &lt;action&gt;
+    status    what is proven and what is missing
+    add       add requirements
+    check     mark a requirement met, with evidence
+    test      run the test command and record the result
+    shot      screenshot the app
+    report    write the HTML report
+
+examples:
+  keelyard proof status
+  keelyard proof add "discount applies once" "empty cart costs 0"
+  keelyard proof check 1 "test_discount_once passes"
+  keelyard proof test after
+  keelyard proof report            # writes an HTML report
+</code></pre></div>
+<h3 id="proof-status">proof status<a class="headerlink" href="#proof-status" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code>usage: keelyard &lt;command&gt; [options] proof status [-h] [--json]
+
+what is proven and what is missing
+
+options:
+  -h, --help  show this help message and exit
+  --json      print one JSON object on stdout (for scripts and agents)
+</code></pre></div>
+<h3 id="proof-add">proof add<a class="headerlink" href="#proof-add" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code>usage: keelyard &lt;command&gt; [options] proof add [-h] [--json] items [items ...]
+
+add requirements
+
+positional arguments:
+  items
+
+options:
+  -h, --help  show this help message and exit
+  --json      print one JSON object on stdout (for scripts and agents)
+</code></pre></div>
+<h3 id="proof-check">proof check<a class="headerlink" href="#proof-check" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code>usage: keelyard &lt;command&gt; [options] proof check [-h] [--json] id evidence
+
+mark a requirement met, with evidence
+
+positional arguments:
+  id
+  evidence
+
+options:
+  -h, --help  show this help message and exit
+  --json      print one JSON object on stdout (for scripts and agents)
+</code></pre></div>
+<h3 id="proof-test">proof test<a class="headerlink" href="#proof-test" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code>usage: keelyard &lt;command&gt; [options] proof test [-h] [--json] [--cmd TEST_CMD] {before,after}
+
+run the test command and record the result
+
+positional arguments:
+  {before,after}
+
+options:
+  -h, --help      show this help message and exit
+  --json          print one JSON object on stdout (for scripts and agents)
+  --cmd TEST_CMD  override [proof].test_cmd
+</code></pre></div>
+<h3 id="proof-shot">proof shot<a class="headerlink" href="#proof-shot" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code>usage: keelyard &lt;command&gt; [options] proof shot [-h] [--json] [url]
+
+screenshot the app
+
+positional arguments:
+  url
+
+options:
+  -h, --help  show this help message and exit
+  --json      print one JSON object on stdout (for scripts and agents)
+</code></pre></div>
+<h3 id="proof-report">proof report<a class="headerlink" href="#proof-report" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code>usage: keelyard &lt;command&gt; [options] proof report [-h] [--json] [--open]
+
+write the HTML report
+
+options:
+  -h, --help  show this help message and exit
+  --json      print one JSON object on stdout (for scripts and agents)
+  --open      open it in the browser
+</code></pre></div>
+<h2 id="run">run<a class="headerlink" href="#run" title="Permanent link">&para;</a></h2>
+<div class="highlight"><pre><span></span><code>usage: keelyard &lt;command&gt; [options] run [-h] [--json] ...
+
+run a command and print a compact version of its output
+
+positional arguments:
+  command
+
+options:
+  -h, --help  show this help message and exit
+  --json      print one JSON object on stdout (for scripts and agents)
+
+examples:
+  keelyard run pytest -q
+  keelyard run git log --stat
+  keelyard run -- ruff check .     # use -- if the command has its own flags first
+</code></pre></div>
+<h2 id="filter">filter<a class="headerlink" href="#filter" title="Permanent link">&para;</a></h2>
+<div class="highlight"><pre><span></span><code>usage: keelyard &lt;command&gt; [options] filter [-h] [--json] [--for FOR_CMD]
+
+compact output piped on stdin
+
+options:
+  -h, --help     show this help message and exit
+  --json         print one JSON object on stdout (for scripts and agents)
+  --for FOR_CMD  the command that produced the output (picks the rules)
+
+examples:
+  pytest -q 2&gt;&amp;1 | keelyard filter --for 'pytest -q'
+</code></pre></div>
+<h2 id="recall">recall<a class="headerlink" href="#recall" title="Permanent link">&para;</a></h2>
+<div class="highlight"><pre><span></span><code>usage: keelyard &lt;command&gt; [options] recall [-h] [--json] id
+
+print the full output that `run` shortened
+
+positional arguments:
+  id
+
+options:
+  -h, --help  show this help message and exit
+  --json      print one JSON object on stdout (for scripts and agents)
+
+examples:
+  keelyard recall 3f9a1c2b7d4e
+</code></pre></div>
+<h2 id="code">code<a class="headerlink" href="#code" title="Permanent link">&para;</a></h2>
+<div class="highlight"><pre><span></span><code>usage: keelyard &lt;command&gt; [options] code [-h] &lt;action&gt; ...
+
+outline a file, map the project, find a symbol
+
+options:
+  -h, --help  show this help message and exit
+
+actions:
+  &lt;action&gt;
+    outline   signatures only
+    map       compact project map
+    find      where a symbol is defined
+
+examples:
+  keelyard code outline src/app.py
+  keelyard code map
+  keelyard code find Cart
+</code></pre></div>
+<h3 id="code-outline">code outline<a class="headerlink" href="#code-outline" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code>usage: keelyard &lt;command&gt; [options] code outline [-h] [--json] path
+
+signatures only
+
+positional arguments:
+  path
+
+options:
+  -h, --help  show this help message and exit
+  --json      print one JSON object on stdout (for scripts and agents)
+</code></pre></div>
+<h3 id="code-map">code map<a class="headerlink" href="#code-map" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code>usage: keelyard &lt;command&gt; [options] code map [-h] [--json]
+
+compact project map
+
+options:
+  -h, --help  show this help message and exit
+  --json      print one JSON object on stdout (for scripts and agents)
+</code></pre></div>
+<h3 id="code-find">code find<a class="headerlink" href="#code-find" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code>usage: keelyard &lt;command&gt; [options] code find [-h] [--json] name
+
+where a symbol is defined
+
+positional arguments:
+  name
+
+options:
+  -h, --help  show this help message and exit
+  --json      print one JSON object on stdout (for scripts and agents)
+</code></pre></div>
+<h2 id="memory">memory<a class="headerlink" href="#memory" title="Permanent link">&para;</a></h2>
+<div class="highlight"><pre><span></span><code>usage: keelyard &lt;command&gt; [options] memory [-h] &lt;action&gt; ...
+
+search past sessions across all your agents
+
+options:
+  -h, --help  show this help message and exit
+
+actions:
+  &lt;action&gt;
+    index     read new sessions from Claude Code, Codex and OpenCode
+    stats     what is indexed
+    search    full-text search
+
+examples:
+  keelyard memory index            # read new sessions from all agents
+  keelyard memory search "rate limit retry"
+  keelyard memory stats
+</code></pre></div>
+<h3 id="memory-index">memory index<a class="headerlink" href="#memory-index" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code>usage: keelyard &lt;command&gt; [options] memory index [-h] [--json]
+
+read new sessions from Claude Code, Codex and OpenCode
+
+options:
+  -h, --help  show this help message and exit
+  --json      print one JSON object on stdout (for scripts and agents)
+</code></pre></div>
+<h3 id="memory-search">memory search<a class="headerlink" href="#memory-search" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code>usage: keelyard &lt;command&gt; [options] memory search [-h] [--json] [--project PROJECT]
+                                                  [--budget BUDGET]
+                                                  query
+
+full-text search
+
+positional arguments:
+  query
+
+options:
+  -h, --help         show this help message and exit
+  --json             print one JSON object on stdout (for scripts and agents)
+  --project PROJECT
+  --budget BUDGET    max characters returned (default 2400)
+</code></pre></div>
+<h3 id="memory-stats">memory stats<a class="headerlink" href="#memory-stats" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code>usage: keelyard &lt;command&gt; [options] memory stats [-h] [--json]
+
+what is indexed
+
+options:
+  -h, --help  show this help message and exit
+  --json      print one JSON object on stdout (for scripts and agents)
+</code></pre></div>
+<h2 id="usage">usage<a class="headerlink" href="#usage" title="Permanent link">&para;</a></h2>
+<div class="highlight"><pre><span></span><code>usage: keelyard &lt;command&gt; [options] usage [-h] [--json] [--by {day,model,agent}]
+
+tokens and cost from your local agent logs
+
+options:
+  -h, --help            show this help message and exit
+  --json                print one JSON object on stdout (for scripts and agents)
+  --by {day,model,agent}
+
+examples:
+  keelyard usage
+  keelyard usage --by model
+</code></pre></div>
+<h2 id="swarm">swarm<a class="headerlink" href="#swarm" title="Permanent link">&para;</a></h2>
+<div class="highlight"><pre><span></span><code>usage: keelyard &lt;command&gt; [options] swarm [-h] &lt;action&gt; ...
+
+fan small, checkable tasks out to a cheap model
+
+options:
+  -h, --help  show this help message and exit
+
+actions:
+  &lt;action&gt;
+    run       run tasks from a JSON file
+    plan      split a goal into focused helper tasks (no model call)
+
+examples:
+  keelyard swarm plan "fix total() for SAVE10" --json &gt; tasks.json
+  keelyard swarm run tasks.json   # [{"kind": "ask", "prompt": "...", "files": ["a.py"], "symbols": ["total"]}]
+  keelyard swarm plan "where is auth checked" --subagents
+</code></pre></div>
+<h3 id="swarm-run">swarm run<a class="headerlink" href="#swarm-run" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code>usage: keelyard &lt;command&gt; [options] swarm run [-h] [--json] [--model MODEL] [--best-of BEST_OF]
+                                              [--retries RETRIES] [--basic]
+                                              tasks
+
+run tasks from a JSON file
+
+positional arguments:
+  tasks
+
+options:
+  -h, --help         show this help message and exit
+  --json             print one JSON object on stdout (for scripts and agents)
+  --model MODEL      a [models.&lt;key&gt;] from the config (default: [swarm].helper_model)
+  --best-of BEST_OF  samples per task (default: [swarm].best_of)
+  --retries RETRIES  retries with checker feedback (default: [swarm].retries)
+  --basic            no blackboard, critic, routing or budget (the plain swarm)
+</code></pre></div>
+<h2 id="arena">arena<a class="headerlink" href="#arena" title="Permanent link">&para;</a></h2>
+<div class="highlight"><pre><span></span><code>usage: keelyard &lt;command&gt; [options] arena [-h] &lt;action&gt; ...
+
+run one task across agents and models, compare results
+
+options:
+  -h, --help  show this help message and exit
+
+actions:
+  &lt;action&gt;
+    run       run a task spec
+    render    re-render the report from results.json
+
+examples:
+  keelyard arena run examples/arena/discount/task.toml
+  keelyard arena render arena-results
+</code></pre></div>
+<h3 id="arena-run">arena run<a class="headerlink" href="#arena-run" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code>usage: keelyard &lt;command&gt; [options] arena run [-h] [--json] [--out OUT] [--only [NAME ...]] spec
+
+run a task spec
+
+positional arguments:
+  spec
+
+options:
+  -h, --help         show this help message and exit
+  --json             print one JSON object on stdout (for scripts and agents)
+  --out OUT
+  --only [NAME ...]  only these contenders
+</code></pre></div>
+<h3 id="arena-render">arena render<a class="headerlink" href="#arena-render" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code>usage: keelyard &lt;command&gt; [options] arena render [-h] [--json] out
+
+re-render the report from results.json
+
+positional arguments:
+  out
+
+options:
+  -h, --help  show this help message and exit
+  --json      print one JSON object on stdout (for scripts and agents)
+</code></pre></div>
+<h2 id="bench">bench<a class="headerlink" href="#bench" title="Permanent link">&para;</a></h2>
+<div class="highlight"><pre><span></span><code>usage: keelyard &lt;command&gt; [options] bench [-h] [--json]
+
+measure savings on your own machine
+
+options:
+  -h, --help  show this help message and exit
+  --json      print one JSON object on stdout (for scripts and agents)
+
+examples:
+  keelyard bench
+  keelyard bench --json
+</code></pre></div>
+<h2 id="install">install<a class="headerlink" href="#install" title="Permanent link">&para;</a></h2>
+<div class="highlight"><pre><span></span><code>usage: keelyard &lt;command&gt; [options] install [-h] [--json] [--global] [{claude,codex,opencode}]
+
+wire one agent in this project
+
+positional arguments:
+  {claude,codex,opencode}
+
+options:
+  -h, --help            show this help message and exit
+  --json                print one JSON object on stdout (for scripts and agents)
+  --global              wire at user level (all agents if none named)
+
+examples:
+  keelyard install claude
+  keelyard install --global
+</code></pre></div>
+<h2 id="uninstall">uninstall<a class="headerlink" href="#uninstall" title="Permanent link">&para;</a></h2>
+<div class="highlight"><pre><span></span><code>usage: keelyard &lt;command&gt; [options] uninstall [-h] [--json] [--global] [{claude,codex,opencode}]
+
+unwire one agent in this project
+
+positional arguments:
+  {claude,codex,opencode}
+
+options:
+  -h, --help            show this help message and exit
+  --json                print one JSON object on stdout (for scripts and agents)
+  --global              unwire at user level (all agents if none named)
+
+examples:
+  keelyard uninstall claude
+  keelyard uninstall --global
+</code></pre></div>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+    
+      
+      <nav class="md-footer__inner md-grid" aria-label="Footer" >
+        
+          
+          <a href="../guide/agents/" class="md-footer__link md-footer__link--prev" aria-label="Previous: For agents">
+            <div class="md-footer__button md-icon">
+              
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+            </div>
+            <div class="md-footer__title">
+              <span class="md-footer__direction">
+                Previous
+              </span>
+              <div class="md-ellipsis">
+                For agents
+              </div>
+            </div>
+          </a>
+        
+        
+          
+          <a href="../mcp/" class="md-footer__link md-footer__link--next" aria-label="Next: MCP tools">
+            <div class="md-footer__title">
+              <span class="md-footer__direction">
+                Next
+              </span>
+              <div class="md-ellipsis">
+                MCP tools
+              </div>
+            </div>
+            <div class="md-footer__button md-icon">
+              
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M4 11v2h12l-5.5 5.5 1.42 1.42L19.84 12l-7.92-7.92L10.5 5.5 16 11z"/></svg>
+            </div>
+          </a>
+        
+      </nav>
+    
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+    <div class="md-copyright__highlight">
+      Apache-2.0 · Geist fonts under OFL-1.1
+    </div>
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": ["navigation.sections", "navigation.top", "content.code.copy", "search.highlight", "navigation.footer"], "search": "../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../assets/javascripts/bundle.d7400e89.min.js"></script>
+      
+    
+  </body>
+</html>
