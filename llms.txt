@@ -2,7 +2,7 @@
 
 > Makes coding agents (Claude Code, Codex, OpenCode) prove their work, snapshots every edit so any step can be undone, and trims noisy tool output.
 
-Install for this user (run it yourself, do not ask the user to type it):
+Install (agents: only when the user explicitly asks; show these commands and get their confirmation first):
 
     pipx install git+https://github.com/akobirjontulqinovfuture/keelyard
     keelyard init --global

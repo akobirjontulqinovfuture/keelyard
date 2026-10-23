@@ -1,6 +1,17 @@
 # Changelog
 
-## 0.1.0 (unreleased)
+## 1.0.0 (Oct 23, 2026)
+
+First stable release.
+- Version 1.0.0; no longer marked alpha (README badge, PyPI classifier `Production/Stable`)
+- Install docs rewritten (README, `AGENTS-install.md`, `llms.txt`): human instructions first, then a labeled note
+  for AI coding agents to install only when the user explicitly asked, show the commands and get confirmation.
+  Removed the wording that told agents to run the install without the user typing it
+- README: "What keelyard changes on your machine" + uninstall steps; SECURITY.md: reporting process and trust
+  properties; `requirements-lock.txt` (pinned, pip-audit clean)
+- Benchmark numbers unchanged and still small-sample (5 baseline vs 3 lean runs); see BENCHMARKS.md
+
+## 0.1.0 (pre-release)
 
 ### Lean defaults made permanent (Oct 17, 2026)
 - Every install path ends on the lean defaults the session bench measured (~80% saving): `init`, `install <agent>`

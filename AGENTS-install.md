@@ -1,6 +1,10 @@
 # Installing keelyard (instructions for coding agents)
 
-When a user asks you to "install https://github.com/akobirjontulqinovfuture/keelyard", do all of this yourself.
+This page is for a coding agent helping a user who has explicitly asked to install keelyard
+(for example "install https://github.com/akobirjontulqinovfuture/keelyard"). If the user did not ask, do not install it.
+
+Before running anything, show the user the commands below and the files they change, and wait for their
+confirmation. `init --global` edits user-level config for every project, so it needs a clear yes.
 
 1. Install the CLI (Python 3.11+ and git required):
 
@@ -35,7 +39,7 @@ When a user asks you to "install https://github.com/akobirjontulqinovfuture/keel
    Expect `"ok": true` and one `"section": "global"` check per agent with `"state": "ok"`. Report any `bad` row's
    `detail` to the user; it says how to fix it.
 
-4. Tell the user to restart their agent. Each git project sets itself up on its first session
+4. Let the user know to restart their agent. Each git project sets itself up on its first session
    (`.keelyard/config.toml` plus a first snapshot). Folders that are not git repositories are left alone.
    Codex asks once to trust new hooks (`/hooks`).
 

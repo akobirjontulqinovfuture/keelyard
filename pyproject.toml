@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "keelyard"
-version = "0.1.0"
+version = "1.0.0"
 description = "Proof-of-work gate, rewind, helper swarm, usage saver and shared memory for Claude Code, Codex and OpenCode."
 readme = "README.md"
 license = "Apache-2.0"
@@ -13,7 +13,7 @@ requires-python = ">=3.11"
 authors = [{ name = "Akobir Tulqinov" }]
 keywords = ["ai-agents", "claude-code", "codex", "opencode", "mcp", "developer-tools"]
 classifiers = [
-  "Development Status :: 3 - Alpha",
+  "Development Status :: 5 - Production/Stable",
   "Environment :: Console",
   "Intended Audience :: Developers",
   "Programming Language :: Python :: 3",
