@@ -1,8 +1,14 @@
 # Changelog
 
-## 1.0.0 (Oct 23, 2026)
+## 1.0.0 (unreleased, first PyPI release)
 
 First stable release.
+- Published to PyPI as `keelyard` (`pip install keelyard`) by `.github/workflows/publish.yml`, using PyPI
+  Trusted Publishing (no API token stored in the repo)
+- Timeline browser: `g` / `G` jump to the first / last step (#9)
+- New `mypy` filter: every diagnostic line is kept whole, so the trailing `[error-code]` is no longer clipped;
+  real mypy and pyright output added to the filter corpus with a test (#1)
+- README: PyPI install, "without vs with keelyard" table, per-agent wiring table; ROADMAP.md
 - Version 1.0.0; no longer marked alpha (README badge, PyPI classifier `Production/Stable`)
 - Install docs rewritten (README, `AGENTS-install.md`, `llms.txt`): human instructions first, then a labeled note
   for AI coding agents to install only when the user explicitly asked, show the commands and get confirmation.

@@ -1,0 +1,9 @@
+src/bad.py
+  src/bad.py:4:10 - error: Type "int" is not assignable to declared type "str"
+    "int" is not assignable to "str" (reportAssignmentType)
+  src/bad.py:5:10 - error: Type "Literal['hi']" is not assignable to declared type "int"
+    "Literal['hi']" is not assignable to "int" (reportAssignmentType)
+  src/bad.py:6:5 - error: Argument of type "Literal['a']" cannot be assigned to parameter "a" of type "int" in function "add"
+    "Literal['a']" is not assignable to "int" (reportArgumentType)
+  src/bad.py:7:8 - error: Import "notamodule" could not be resolved (reportMissingImports)
+4 errors, 0 warnings, 0 informations

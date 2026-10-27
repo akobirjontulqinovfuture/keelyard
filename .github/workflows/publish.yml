@@ -1,6 +1,7 @@
-# Publishes to PyPI when a GitHub release is published, via trusted publishing (no token stored).
-# One-time setup on pypi.org: add this repo + workflow "release.yml" + environment "pypi" as a trusted publisher.
-name: release
+# Publishes to PyPI when a GitHub release is published, via Trusted Publishing (OIDC, no token stored).
+# One-time setup on pypi.org: pending publisher = owner akobirjontulqinovfuture, repo keelyard,
+# workflow "publish.yml", environment "pypi".
+name: publish
 on:
   release:
     types: [published]

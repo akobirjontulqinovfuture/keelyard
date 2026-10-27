@@ -106,7 +106,8 @@ class Timeline(App):
     TITLE = "keelyard timeline"
     ENABLE_COMMAND_PALETTE = False
     BINDINGS = [Binding("up,down", "noop", "move"), Binding("r", "rewind", "rewind to step"), Binding("q", "quit", "quit"),
-                Binding("j", "cursor_down", show=False), Binding("k", "cursor_up", show=False)]
+                Binding("j", "cursor_down", show=False), Binding("k", "cursor_up", show=False),
+                Binding("g", "first", show=False), Binding("G", "last", show=False)]
 
     def __init__(self, shadow: Shadow):
         super().__init__()
@@ -159,6 +160,12 @@ class Timeline(App):
 
     def action_cursor_up(self) -> None:
         self.query_one("#steps", OptionList).action_cursor_up()
+
+    def action_first(self) -> None:
+        self.query_one("#steps", OptionList).action_first()
+
+    def action_last(self) -> None:
+        self.query_one("#steps", OptionList).action_last()
 
     def action_rewind(self) -> None:
         ol = self.query_one("#steps", OptionList)

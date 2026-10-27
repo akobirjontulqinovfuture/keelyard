@@ -45,3 +45,23 @@ def test_timeline_rewind_needs_confirmation(cfg, project):
     msg = asyncio.run(go())
     assert "a + b" in (project / "app.py").read_text(encoding="utf-8")
     assert msg and "restored step #1" in msg and "undo" in msg
+
+
+def test_timeline_g_and_G_jump_to_ends(cfg, project):
+    sh = _steps(cfg, project)
+    (project / "app.py").write_text("def add(a, b):\n    return a * b\n", encoding="utf-8")
+    sh.snapshot("Edit")
+
+    async def go():
+        app = Timeline(sh)
+        async with app.run_test(size=(120, 30)) as pilot:
+            ol = app.query_one("#steps")
+            await pilot.press("G")
+            await pilot.pause()
+            assert ol.highlighted == len(app.steps) - 1
+            assert "#1" in str(app.query_one("#head").render())
+            await pilot.press("g")
+            await pilot.pause()
+            assert ol.highlighted == 0
+            assert f"#{app.steps[0].step}" in str(app.query_one("#head").render())
+    asyncio.run(go())

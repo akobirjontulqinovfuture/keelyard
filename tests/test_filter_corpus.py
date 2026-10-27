@@ -14,6 +14,7 @@ CMDS = {
     "pytest_mixed": "python -m pytest -q", "pytest_verbose": "python -m pytest", "python_traceback": "python tb.py",
     "ruff": "ruff check .", "go_test": "go test -v ./...", "cargo_test": "cargo test", "node_test": "node --test",
     "eslint": "eslint .", "npm_test": "npm test", "git_merge_conflict": "git merge b", "jest_fail": "npx jest",
+    "mypy": "mypy src", "pyright": "pyright src",
 }
 # test counts and stack-trace frames: the facts an agent needs to judge a run
 COUNTS = re.compile(r"(?i)(\b\d+ (passed|failed|total)\b|test result:|^# (pass|fail|tests) \d+|^(ok|FAIL)\s+\S+\s+[\d.]+s$)")

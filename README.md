@@ -6,6 +6,7 @@
 Every edit is snapshotted, so any step can be undone. Logs are trimmed before they eat the context window.
 
 [![CI](https://github.com/akobirjontulqinovfuture/keelyard/actions/workflows/ci.yml/badge.svg)](https://github.com/akobirjontulqinovfuture/keelyard/actions/workflows/ci.yml)
+[![PyPI](https://img.shields.io/pypi/v/keelyard?color=111111)](https://pypi.org/project/keelyard/)
 [![License](https://img.shields.io/badge/license-Apache--2.0-111111)](LICENSE)
 ![Python](https://img.shields.io/badge/python-3.11%20%E2%80%93%203.13-111111)
 ![Agents](https://img.shields.io/badge/agents-Claude%20Code%20%C2%B7%20Codex%20%C2%B7%20OpenCode-1F6F4A)
@@ -19,7 +20,7 @@ Every edit is snapshotted, so any step can be undone. Logs are trimmed before th
 ## Install
 
 ```sh
-pipx install git+https://github.com/akobirjontulqinovfuture/keelyard   # or: python -m pip install --user git+https://github.com/akobirjontulqinovfuture/keelyard
+pipx install git+https://github.com/akobirjontulqinovfuture/keelyard   # or from PyPI: pipx install keelyard
 keelyard init --global
 keelyard doctor --json
 ```
@@ -40,14 +41,15 @@ In the recording, the agent deletes three tests to get a green run and then trie
 ## Quickstart (30 seconds)
 
 ```bash
-pipx install git+https://github.com/akobirjontulqinovfuture/keelyard
+pip install keelyard          # or pipx install keelyard
 cd your-project
 keelyard init --preset lean   # wires Claude Code, Codex and OpenCode; fewest tokens
 keelyard doctor               # everything green?
 ```
 
 Use your agent as usual. `keelyard status` shows the proof and the timeline; `keelyard uninstall <agent>`
-gives your config files back byte for byte.
+gives your config files back byte for byte. Latest `main` instead of the PyPI release:
+`pipx install git+https://github.com/akobirjontulqinovfuture/keelyard`.
 
 > **Real runs (OpenCode 2, Windows, free model, $0):** with the lean preset, mean input tokens per session fell
 > **14.2×** on a noisy 1,566-test task and **6.0×** on a small 66-test task (5 baseline vs 3 lean runs, all tests
@@ -82,6 +84,25 @@ gives your config files back byte for byte.
 - **Memory, usage, swarm, arena.** Search past sessions of all three agents, see token use from local logs,
   send small checked tasks to a free/cheap model, compare agents on one task.
 
+### Without vs with keelyard
+
+| | Without | With keelyard |
+|---|---|---|
+| Agent says "done" | You take its word, then run the tests yourself | It can't stop until tests pass on the current files; the proof is shown |
+| Agent deletes or skips a failing test | Easy to miss in a long diff | Fewer tests, new `skip`/`xfail` or removed asserts keep the proof open |
+| A step breaks something | `git stash`/manual undo, if you committed in time | `keelyard rewind to <n>`, and the rewind itself can be undone |
+| 3,000 lines of passing test output | All of it goes into the context window | Errors, warnings and `file:line` kept, the rest collapsed |
+
+### How it plugs into each agent
+
+| Agent | Hooks (gate, snapshots, filters) | MCP server |
+|---|---|---|
+| Claude Code | `.claude/settings.json` | `.mcp.json` |
+| Codex | `.codex/hooks.json` (not yet checked on a live Codex CLI, see [#7](https://github.com/akobirjontulqinovfuture/keelyard/issues/7)) | `~/.codex/config.toml` (or `.codex/config.toml` with `--codex-project-mcp`) |
+| OpenCode | `.opencode/plugins/keelyard.js` | `opencode.json` |
+
+`keelyard init` writes these for you; `keelyard doctor` checks them.
+
 **Read [what keelyard guarantees and what it doesn't](docs/guarantees.md)** before you rely on it. In short:
 snapshots undo files, not databases, migrations or deployed services; proof is only as good as your tests.
 
@@ -110,5 +131,6 @@ Ideas, not code: everything in keelyard is written from scratch. Thanks to
 
 ## Contributing
 
-Read [CONTRIBUTING.md](CONTRIBUTING.md). Real command logs for the filter corpus are especially welcome.
+Read [CONTRIBUTING.md](CONTRIBUTING.md) and the [roadmap](ROADMAP.md). Issues labeled
+[good first issue](https://github.com/akobirjontulqinovfuture/keelyard/labels/good%20first%20issue) are a good start. Real command logs for the filter corpus are especially welcome.
 Security issues: [SECURITY.md](SECURITY.md). Apache-2.0; third-party notices in [NOTICE](NOTICE).

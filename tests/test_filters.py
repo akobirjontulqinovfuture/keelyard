@@ -113,3 +113,19 @@ def test_run_never_makes_small_output_bigger(tmp_path):
     code, out = run_filtered(f'{sys.executable} -c "print(42)"', tmp_path, tmp_path / "raw")
     assert code == 0 and out == "42"
     assert not (tmp_path / "raw").exists()
+
+
+def test_type_checkers_keep_every_location_and_error_code():
+    """Issue #1: real mypy and pyright output; every path:line and every error code must survive."""
+    import re
+    from pathlib import Path
+
+    corpus = Path(__file__).parent / "corpus"
+    for cmd, name, code_re in [("mypy src", "mypy", r"\[([a-z-]+)\]$"), ("pyright src", "pyright", r"\((report\w+)\)$")]:
+        raw = (corpus / f"{name}.log").read_text(encoding="utf-8")
+        out = filter_output(cmd, raw)
+        locs = re.findall(r"(src/bad\.py:\d+(?::\d+)?)(?::| -) error", raw)
+        codes = [m.group(1) for ln in raw.splitlines() if (m := re.search(code_re, ln.strip()))]
+        assert locs and codes
+        assert all(loc in out for loc in locs), (name, out)
+        assert all(c in out for c in codes), (name, out)

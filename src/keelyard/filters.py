@@ -235,7 +235,7 @@ def listing(out: str, per_dir: int = 15) -> str:
 
 
 def lint(out: str) -> str:
-    """ruff/eslint/flake8/mypy style 'path:line:col: CODE message' grouped by rule."""
+    """ruff/eslint/flake8/pyright style 'path:line:col: CODE message' grouped by rule."""
     rules: dict[str, list[str]] = OrderedDict()
     rest = []
     lines = _clean(out)
@@ -260,6 +260,16 @@ def lint(out: str) -> str:
     return "\n".join(body + [ln for ln in rest if IMPORTANT.search(ln) or "Found" in ln][:10])
 
 
+def mypy(out: str) -> str:
+    """mypy: one diagnostic per line, 'path:line: error: message  [code]'. Grouping by message would clip the
+    trailing [code], so every diagnostic is kept whole (long lines clipped in the middle, never at the end)."""
+    keep = []
+    for ln in _clean(out):
+        if re.match(r"^.+?:\d+(?::\d+)?: (error|warning|note): ", ln) or re.match(r"^(Found \d+|Success:)", ln):
+            keep.append(ln if len(ln) <= MAX_LINE else ln[: MAX_LINE - 40] + " … " + ln[-37:])
+    return "\n".join(keep) if keep else compress_output(out)
+
+
 # ----------------------------------------------------------------- dispatch
 RULES: list[tuple[re.Pattern[str], Callable[[str], str]]] = [
     (re.compile(r"^git status\b"), git_status),
@@ -269,7 +279,8 @@ RULES: list[tuple[re.Pattern[str], Callable[[str], str]]] = [
     (re.compile(r"^(cargo test|go test|npm (run )?test|pnpm test|yarn test|npx (jest|vitest)|jest|vitest|bun test)\b"), generic_tests),
     (re.compile(r"^(rg|grep|git grep)\b"), grep),
     (re.compile(r"^(find|fd|git ls-files|ls -R)\b"), listing),
-    (re.compile(r"^(ruff( check)?|eslint|npx eslint|flake8|mypy|pyright|tsc|npx tsc)\b"), lint),
+    (re.compile(r"^(python3? -m |uv run )?d?mypy\b"), mypy),
+    (re.compile(r"^(ruff( check)?|eslint|npx eslint|flake8|pyright|npx pyright|tsc|npx tsc)\b"), lint),
 ]
 
 
