@@ -45,7 +45,10 @@ hooks. Codex then works as usual. When it says "done" with red or unrun tests, k
 a test run in Codex's own shell is the proof. Every edit is snapshotted, so `keelyard rewind to <n>` undoes a bad step.
 Checked on **Codex CLI 0.165.0** by [`scripts/codex_e2e.py`](https://github.com/akobirjontulqinovfuture/keelyard/blob/main/scripts/codex_e2e.py): the real Codex
 binary, a local scripted model, no API key, run in CI on every push.
-**[Codex in 2 minutes →](https://akobirjontulqinovfuture.github.io/keelyard/codex/)** (also works with Claude Code and OpenCode)
+**[Codex in 2 minutes →](https://akobirjontulqinovfuture.github.io/keelyard/codex/)**
+
+**Works with Claude Code:** `keelyard init --agent claude` writes `.claude/settings.json` hooks, `.mcp.json` and a
+CLAUDE.md block. Checked by hand on Claude Code 2.1.197. **[Claude Code in 2 minutes →](https://akobirjontulqinovfuture.github.io/keelyard/claude-code/)** (OpenCode works too)
 
 
 <!-- agent-install:start -->

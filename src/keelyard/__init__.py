@@ -1,3 +1,3 @@
 """keelyard: a local trust-and-thrift layer for AI coding agents."""
 
-__version__ = "1.1.0"
+__version__ = "1.1.1"

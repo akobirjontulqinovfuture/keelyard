@@ -39,6 +39,7 @@ nav:
   - Overview: index.md
   - Quickstart: quickstart.md
   - Codex in 2 minutes: codex.md
+  - Claude Code in 2 minutes: claude-code.md
   - Guarantees and limits: guarantees.md
   - Guide:
       - Proof gate: guide/proof.md

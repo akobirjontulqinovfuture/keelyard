@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.1.1 (Oct 28, 2026)
+
+- Docs: new "Claude Code in 2 minutes" page (docs/claude-code.md): install, `keelyard init --agent claude`, the files it writes, MCP approval, what you see, and what was checked by hand on Claude Code 2.1.197.
+- README: "Works with Claude Code" line next to the Codex section.
+
 ## 1.1.0 (Oct 29, 2026)
 
 Codex, verified end to end.
