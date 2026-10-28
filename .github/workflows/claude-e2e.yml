@@ -2,10 +2,14 @@ name: claude-e2e
 # keelyard inside the real Claude Code CLI, driven by a local scripted model: no Anthropic key, $0.
 on:
   push:
+    branches: [main]
   pull_request:
   schedule:
     - cron: "37 5 * * 1"   # weekly, to catch Claude Code releases that change the hook contract
   workflow_dispatch:
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 permissions:
   contents: read
 jobs:
