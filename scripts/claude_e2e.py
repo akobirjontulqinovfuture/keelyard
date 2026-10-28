@@ -136,7 +136,7 @@ def main() -> int:
          "hooks" in json.loads((proj / ".claude" / "settings.json").read_text())),
         ("CLAUDE.md has the keelyard block", "keelyard:start" in (proj / "CLAUDE.md").read_text()),
         ("claude mcp list shows keelyard", "keelyard" in mcp),
-        ("Claude Code sent keelyard's MCP tools to the model", "mcp__keelyard__" in first),
+        ("Claude Code sent keelyard's MCP tools to the model", "mcp__keelyard__" in json.dumps(requests)),  # MCP starts async
         ("Claude Code sent the CLAUDE.md block to the model", "Every edit is snapshotted" in first),
         ("SessionStart / UserPromptSubmit hooks ran", {"SessionStart", "UserPromptSubmit"} <= fired),
         ("PreToolUse / PostToolUse hooks ran", {"PreToolUse", "PostToolUse"} <= fired),

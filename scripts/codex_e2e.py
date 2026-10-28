@@ -111,7 +111,7 @@ def main() -> int:
         ("keelyard init --agent codex wrote .codex/hooks.json", (proj / ".codex" / "hooks.json").is_file()),
         ("AGENTS.md has the keelyard block", "keelyard:start" in (proj / "AGENTS.md").read_text()),
         ("codex mcp list shows keelyard", "keelyard" in mcp),
-        ("Codex sent keelyard's MCP tools to the model", "mcp__keelyard" in first),
+        ("Codex sent keelyard's MCP tools to the model", "mcp__keelyard" in json.dumps(requests)),  # MCP starts async
         ("Codex sent the AGENTS.md block to the model", "keelyard:start" in first),
         ("SessionStart hook ran", "hook: SessionStart Completed" in log),
         ("PreToolUse / PostToolUse hooks ran", "hook: PreToolUse Completed" in log and "hook: PostToolUse Completed" in log),
