@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import os
+import sys
 import time
 from contextlib import contextmanager
 from pathlib import Path
@@ -14,8 +15,9 @@ def file_lock(path: Path, timeout: float = 30.0):
     fd = os.open(path, os.O_RDWR | os.O_CREAT, 0o600)
     deadline = time.monotonic() + timeout
     try:
-        if os.name == "nt":  # pragma: no cover - exercised on Windows only
+        if sys.platform == "win32":  # pragma: no cover - exercised on Windows only
             import msvcrt
+
 
             while True:
                 try:

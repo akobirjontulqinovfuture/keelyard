@@ -1,5 +1,14 @@
 # Changelog
 
+## 1.0.2 (Oct 28, 2026)
+
+Bugs found by turning on mypy (now part of CI on every OS):
+- `keelyard doctor` crashed with a NameError when `.keelyard/config.toml` was invalid TOML; it now reports the bad config
+- A command that timed out showed its partial output as a Python bytes repr (`b'...'`); it is now decoded text
+  (`keelyard run` and the proof test runner)
+- An agent config file that is not UTF-8 now gives a clear install error instead of a traceback
+- Type fixes across the code base: no blanket ignores; two targeted ignores for the optional matplotlib extra
+
 ## 1.0.1 (Oct 28, 2026)
 
 - Install docs (README, AGENTS-install.md, llms.txt, docs) now use `pipx install keelyard` / `pip install keelyard` from PyPI

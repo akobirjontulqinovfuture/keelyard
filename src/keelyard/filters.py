@@ -66,7 +66,8 @@ def git_status(out: str) -> str:
 
 
 def git_log(out: str, limit: int = 30) -> str:
-    rows, cur = [], {}
+    rows: list[dict[str, str]] = []
+    cur: dict[str, str] = {}
     for ln in _clean(out):
         if ln.startswith("commit "):
             if cur:
@@ -90,7 +91,8 @@ def git_log(out: str, limit: int = 30) -> str:
 
 
 def git_diff(out: str, context: int = 1) -> str:
-    keep, ctx_buf = [], []
+    keep: list[str] = []
+    ctx_buf: list[str] = []
     stats: dict[str, list[int]] = defaultdict(lambda: [0, 0])
     cur = ""
     for ln in _clean(out):
@@ -121,7 +123,8 @@ FAIL_LINE = re.compile(r"^(FAILED|ERROR) |^E\s|^\S+\.py:\d+:|^>\s|Error\b|^_{3,}
 
 def pytest(out: str) -> str:
     lines = _clean(out)
-    keep, in_fail = [], False
+    keep: list[str] = []
+    in_fail: bool | str = False
     for ln in lines:
         if re.match(r"^=+ (FAILURES|ERRORS) =+$", ln):
             in_fail = True

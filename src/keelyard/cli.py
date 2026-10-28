@@ -10,6 +10,7 @@ import argparse
 import asyncio
 import dataclasses
 import datetime as dt
+import io
 import json
 import shlex
 import sys
@@ -295,7 +296,8 @@ def _do_global(a, remove: bool):
     agents = [a.agent] if getattr(a, "agent", None) else list(AGENTS)
     if isinstance(getattr(a, "agent", None), list):
         agents = a.agent
-    data = {"global": True, "agents": agents, "changed": {}, "detected": detect()}
+    changed: dict[str, list[str]] = {}
+    data = {"global": True, "agents": agents, "changed": changed, "detected": detect()}
     h = _human(a)
     if h:
         ui.heading("keelyard uninstall --global" if remove else "keelyard init --global", "all projects of this user")
@@ -304,7 +306,7 @@ def _do_global(a, remove: bool):
             files = uninstall_global(x) if remove else install_global(x, terse=None if getattr(a, "terse", True) else False)
         except InstallError as e:
             raise Fail(str(e)) from None
-        data["changed"][x] = files
+        changed[x] = files
         if h:
             ui.line("ok", x, ", ".join(ui.tilde(f) for f in files) or "nothing to remove")
     if h and not remove:
@@ -423,6 +425,7 @@ def _checks() -> list[tuple[str, str, str, str]]:
     root = config.find_root()
     rows.append(("project", "ok", "root", ui.tilde(root)))
     cfg = None
+    has = False
     try:
         cfg = config.load(root)
         has = (root / ".keelyard" / "config.toml").exists()
@@ -454,7 +457,7 @@ def _checks() -> list[tuple[str, str, str, str]]:
             rows.append(("project", "warn", "hook errors", f"see .keelyard/hook.log ({last})"))
         if cfg.raw.get("models", {}).get("strong", {}).get("model") == "set-me":
             rows.append(("project", "skip", "models.strong", "not set (only swarm/route use it)"))
-    if has:
+    if has and cfg is not None:
         from .proof import gate_status
 
         g = gate_status(cfg)
@@ -1034,9 +1037,11 @@ def _print_json(data) -> None:
 
 def main(argv: list[str] | None = None) -> int:
     for stream in (sys.stdin, sys.stdout, sys.stderr):  # Windows pipes default to cp1252: → … and non-Latin text break
+        if not isinstance(stream, io.TextIOWrapper):
+            continue
         try:
             stream.reconfigure(encoding="utf-8", errors="replace")
-        except (AttributeError, ValueError):
+        except ValueError:
             pass
     ap = _parser()
     argv = list(sys.argv[1:] if argv is None else argv)

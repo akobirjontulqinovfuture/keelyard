@@ -77,7 +77,10 @@ def _config_part(rel: str, text: str) -> str | None:
             keep = {k: pkg.get(k) for k in ("jest", "mocha", "vitest") if k in pkg}
             keep["scripts"] = {k: v for k, v in (pkg.get("scripts") or {}).items() if "test" in k}
             return json.dumps(keep, sort_keys=True)
-        return "\n".join(m.group(0) for m in PARTIAL_CONFIG[name].finditer(text))
+        pat = PARTIAL_CONFIG[name]
+        if pat is None:
+            return text
+        return "\n".join(m.group(0) for m in pat.finditer(text))
     return None
 
 

@@ -75,7 +75,7 @@ def run_compact(cfg: Config, cmd: str, timeout: int = 600) -> dict:
         p = subprocess.run(split_cmd(cmd), cwd=cfg.root, capture_output=True, text=True, encoding="utf-8", errors="replace", timeout=timeout)
         code, raw = p.returncode, p.stdout + p.stderr
     except subprocess.TimeoutExpired as e:
-        code, raw = 124, f"timeout after {timeout}s\n{e.stdout or ''}"
+        code, raw = 124, f"timeout after {timeout}s\n{_text(e.stdout)}"
     except FileNotFoundError as e:
         code, raw = 127, str(e)
     small = compress_output(raw, cfg.section("saver")["max_output_chars"])
@@ -185,3 +185,10 @@ def route(task: str, n_files: int = 0) -> dict:
     tier = "strong" if score > 0 else "cheap"
     return {"tier": tier, "score": score, "hard_signals": hard, "easy_signals": easy,
             "why": "keyword heuristic; override freely"}
+
+
+def _text(data: str | bytes | None) -> str:
+    """TimeoutExpired.stdout is bytes even when the process ran with text=True."""
+    if isinstance(data, bytes):
+        return data.decode("utf-8", errors="replace")
+    return data or ""

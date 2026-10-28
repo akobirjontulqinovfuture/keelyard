@@ -272,7 +272,8 @@ class Memory:
         sql += " ORDER BY bm25(fts) LIMIT ?"
         args.append(500)  # total is reported as "500+" beyond this
         rows = self.db.execute(sql, args).fetchall()
-        out, used = [], 0
+        out: list[dict] = []
+        used = 0
         for agent, session, proj, ts, role, snip in rows[offset:]:
             if len(out) >= limit:
                 break

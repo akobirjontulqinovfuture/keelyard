@@ -180,7 +180,8 @@ def handle(event: str, payload: dict, cfg: config.Config) -> dict | None:
         step = None
         if rew["enabled"]:
             sh = Shadow(cfg)
-            step = sh.snapshot(tool="pre-destructive", session=sid) or (sh.steps() or [None])[-1]
+            steps = sh.steps()
+            step = sh.snapshot(tool="pre-destructive", session=sid) or (steps[-1] if steps else None)
         where = f" Snapshot #{step.step} was taken first; `keelyard rewind to {step.step}` restores the files." \
             if step else ""
         if not Nudger(cfg, sid).allow("destructive", kind):
@@ -191,9 +192,9 @@ def handle(event: str, payload: dict, cfg: config.Config) -> dict | None:
     if event == "PreToolUse" and tool in EDIT_TOOLS_WRITE:
         from .brain import Nudger, has_tests_nearby
 
-        for f in _edited_files(tin):
+        for edit_arg in _edited_files(tin):
             try:
-                rel = ReadCache(cfg, sid).resolve(f).relative_to(cfg.root).as_posix()
+                rel = ReadCache(cfg, sid).resolve(edit_arg).relative_to(cfg.root).as_posix()
             except (PermissionError, ValueError):
                 continue
             if not has_tests_nearby(cfg.root, rel) and Nudger(cfg, sid).allow("no-tests", rel):
