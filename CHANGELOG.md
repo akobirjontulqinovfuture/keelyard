@@ -1,6 +1,6 @@
 # Changelog
 
-## 1.0.0 (unreleased, first PyPI release)
+## 1.0.0 (Oct 28, 2026, first PyPI release)
 
 First stable release.
 - Published to PyPI as `keelyard` (`pip install keelyard`) by `.github/workflows/publish.yml`, using PyPI
