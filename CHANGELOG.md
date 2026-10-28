@@ -9,7 +9,8 @@ Both big agents checked end to end in CI, and a tighter supply chain.
 - **Codex PR review:** `codex-review` workflow reviews same-repo pull requests with `openai/codex-action`
   (skipped when no `OPENAI_API_KEY` secret is set).
 - **Supply chain:** OpenSSF Scorecard workflow and badge, build provenance attestations for release files,
-  Dependabot for actions and pip, CODEOWNERS.
+  Dependabot for actions and pip, CODEOWNERS, CodeQL (Python and Actions), every GitHub Action pinned to a commit
+  SHA, least-privilege workflow tokens, private vulnerability reporting on and a fuller SECURITY.md.
 - **CI:** coverage job (gate at 70%; 76% today) and the `examples/demo.sh` session replay run on every push;
   docs deploy on every push to main.
 - **AGENTS.md** for contributors using Codex or another agent: setup, layout, rules.
