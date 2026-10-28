@@ -240,6 +240,8 @@ def handle(event: str, payload: dict, cfg: config.Config) -> dict | None:
     if event == "PostToolUse":
         out = None
         resp = payload.get("tool_response")
+        if isinstance(resp, str):  # Codex sends the shell output as one string, with no exit code
+            resp = {"stdout": resp}
         if tool in SHELL_TOOLS and isinstance(resp, dict) and isinstance(resp.get("stdout"), str):
             cmd = tin.get("command") or tin.get("cmd") or ""
             cmd = " ".join(cmd) if isinstance(cmd, list) else str(cmd)
@@ -253,7 +255,7 @@ def handle(event: str, payload: dict, cfg: config.Config) -> dict | None:
             if hint:
                 out = _ctx("PostToolUse", hint)
         if tool in SHELL_TOOLS and sav.get("filter_bash", True):
-            out = _merge(out, _filter_bash(cfg, tin, payload.get("tool_response")))
+            out = _merge(out, _filter_bash(cfg, tin, payload.get("tool_response")))  # a str (Codex) is never replaced
         if tool in EDIT_TOOLS_READ:
             f = _file_arg(tin)
             if f and not tin.get("offset") and not tin.get("limit"):

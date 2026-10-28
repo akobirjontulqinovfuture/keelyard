@@ -1,0 +1,19 @@
+cff-version: 1.2.0
+message: "If you use keelyard in research or a write-up, please cite it as below."
+title: "keelyard: make AI coding agents prove their work, undo any step, and use fewer tokens"
+type: software
+authors:
+  - family-names: Tulkinov
+    given-names: Akobir
+license: Apache-2.0
+repository-code: "https://github.com/akobirjontulqinovfuture/keelyard"
+url: "https://pypi.org/project/keelyard/"
+version: 1.1.0
+date-released: "2026-10-29"
+keywords:
+  - ai-agents
+  - coding-agents
+  - codex
+  - claude-code
+  - mcp
+  - developer-tools

@@ -13,9 +13,14 @@ them up. Each item links to an issue where one exists. Ideas welcome in
 
 ## 1.1: verified on every agent
 
-- Run the Codex hooks against a real Codex CLI and document the checked version ([#4](https://github.com/akobirjontulqinovfuture/keelyard/issues/4), [#7](https://github.com/akobirjontulqinovfuture/keelyard/issues/7))
+- Codex hooks checked against a real Codex CLI (0.165.0) by `scripts/codex_e2e.py`, in CI on every push and weekly
+  ([#4](https://github.com/akobirjontulqinovfuture/keelyard/issues/4), [#7](https://github.com/akobirjontulqinovfuture/keelyard/issues/7), done in 1.1.0)
+- Codex shell test runs count as proof; Codex's own system prompt no longer leaks into memory (done in 1.1.0)
+- [Codex in 2 minutes](https://akobirjontulqinovfuture.github.io/keelyard/codex/) guide (done in 1.1.0)
+- Same scripted-model e2e check for Claude Code and OpenCode, so all three agents are verified the same way
 - Gemini CLI adapter: hooks + MCP ([#3](https://github.com/akobirjontulqinovfuture/keelyard/issues/3))
 - Codex equivalent of the lean preset (Codex has no agent-config switch for it yet)
+- Token savings measured on Codex with a real model (today only OpenCode sessions are measured)
 
 ## 1.2: numbers anyone can reproduce
 

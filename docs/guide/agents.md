@@ -34,6 +34,14 @@ fixes the bug, proves it and is let through. It needs no network and no API key.
 
 ![selftest](../img/cli-selftest.png)
 
+### Codex: checked version
+
+Checked against **Codex CLI 0.165.0** (Oct 28, 2026) with `scripts/codex_e2e.py`, which runs the real Codex binary
+against a local scripted model (no API key) and runs in CI on every push and weekly. All five hooks fire, the proof
+gate blocks a "done" with red tests and opens after a passing shell test run, MCP tools and the AGENTS.md block reach
+the model, and rewind restores an edit. Codex sends shell results to `PostToolUse` as a plain string with no exit
+code; keelyard reads the test result from the output. See [Codex in 2 minutes](../codex.md).
+
 ### Codex MCP: project or user level
 
 Codex reads MCP servers from `~/.codex/config.toml`, and from a project's `.codex/config.toml` only when you

@@ -13,9 +13,10 @@
 [![Downloads](https://img.shields.io/pypi/dm/keelyard?color=111111)](https://pypistats.org/packages/keelyard)
 [![Python](https://img.shields.io/pypi/pyversions/keelyard?color=111111)](https://pypi.org/project/keelyard/)
 [![CI](https://img.shields.io/github/actions/workflow/status/akobirjontulqinovfuture/keelyard/ci.yml?branch=main&label=ci&color=178A52)](https://github.com/akobirjontulqinovfuture/keelyard/actions/workflows/ci.yml)
+[![Codex e2e](https://img.shields.io/github/actions/workflow/status/akobirjontulqinovfuture/keelyard/codex-e2e.yml?branch=main&label=codex%20e2e&color=178A52)](https://github.com/akobirjontulqinovfuture/keelyard/actions/workflows/codex-e2e.yml)
 [![License](https://img.shields.io/badge/license-Apache--2.0-111111)](https://github.com/akobirjontulqinovfuture/keelyard/blob/main/LICENSE)
 
-[Quickstart](#quickstart-30-seconds) · [Why](#why) · [What it does](#what-it-does) · [Docs](https://akobirjontulqinovfuture.github.io/keelyard/) · [Benchmarks](https://github.com/akobirjontulqinovfuture/keelyard/blob/main/BENCHMARKS.md) · [Roadmap](https://github.com/akobirjontulqinovfuture/keelyard/blob/main/ROADMAP.md)
+[Quickstart](#quickstart-30-seconds) · [Codex](#works-with-codex) · [Why](#why) · [What it does](#what-it-does) · [Docs](https://akobirjontulqinovfuture.github.io/keelyard/) · [Benchmarks](https://github.com/akobirjontulqinovfuture/keelyard/blob/main/BENCHMARKS.md) · [Roadmap](https://github.com/akobirjontulqinovfuture/keelyard/blob/main/ROADMAP.md)
 
 <img src="https://raw.githubusercontent.com/akobirjontulqinovfuture/keelyard/main/docs/img/hero.gif" alt="keelyard in a terminal: init, the proof gate stopping an agent that deleted tests, rewind, then proven" width="760">
 
@@ -31,6 +32,22 @@ the test that was failing. keelyard sits between the agent and your repo:
 - it **trims noisy output** so the context window holds errors, not 3,000 passing lines.
 
 Local only, no telemetry, Apache-2.0.
+
+## Works with Codex
+
+```bash
+pipx install keelyard && cd your-project
+keelyard init --agent codex --codex-project-mcp
+codex
+```
+
+`init` writes the hooks, the MCP server entry and an AGENTS.md block; in Codex, type `/hooks` once to trust the
+hooks. Codex then works as usual. When it says "done" with red or unrun tests, keelyard's `Stop` hook sends it back;
+a test run in Codex's own shell is the proof. Every edit is snapshotted, so `keelyard rewind to <n>` undoes a bad step.
+Checked on **Codex CLI 0.165.0** by [`scripts/codex_e2e.py`](https://github.com/akobirjontulqinovfuture/keelyard/blob/main/scripts/codex_e2e.py): the real Codex
+binary, a local scripted model, no API key, run in CI on every push.
+**[Codex in 2 minutes →](https://akobirjontulqinovfuture.github.io/keelyard/codex/)** (also works with Claude Code and OpenCode)
+
 
 <!-- agent-install:start -->
 ## Install

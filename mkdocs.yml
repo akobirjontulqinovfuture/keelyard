@@ -38,6 +38,7 @@ markdown_extensions:
 nav:
   - Overview: index.md
   - Quickstart: quickstart.md
+  - Codex in 2 minutes: codex.md
   - Guarantees and limits: guarantees.md
   - Guide:
       - Proof gate: guide/proof.md

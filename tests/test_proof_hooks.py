@@ -83,3 +83,16 @@ def test_red_test_is_the_only_gap_shown(cfg, project):
     assert pf.run_tests("after", f"{sys.executable} -m pytest -q")["exit"] != 0
     gaps = pf.missing()
     assert len(gaps) == 1 and "failed" in gaps[0]
+
+
+def test_codex_shell_test_run_opens_the_gate(cfg, project):
+    """Codex (0.165) sends a Bash tool_response as a plain string with no exit code."""
+    hooks.handle("SessionStart", claude("SessionStart"), cfg)
+    hooks.handle("UserPromptSubmit", claude("UserPromptSubmit", prompt="fix add"), cfg)
+    (project / "app.py").write_text("def add(a, b):\n    return a + b\n")
+    hooks.handle("PostToolUse", claude("PostToolUse", tool_name="Edit", tool_input={"file_path": "app.py"}), cfg)
+    hooks.handle("PostToolUse", claude("PostToolUse", tool_name="Bash", tool_input={"command": "python -m pytest -q"},
+                                       tool_response="..                                    [100%]\n2 passed in 0.01s\n"), cfg)
+    runs = [r for r in Proof(cfg, "s1").load().test_runs if r["source"] == "shell"]
+    assert [r["exit"] for r in runs] == [0]
+    assert hooks.handle("Stop", claude("Stop", stop_hook_active=True), cfg) is None

@@ -1,5 +1,22 @@
 # Changelog
 
+## 1.1.0 (Oct 29, 2026)
+
+Codex, verified end to end.
+- **Fix (Codex):** a test run in Codex's own shell now counts as proof. Codex 0.165 sends shell results to
+  `PostToolUse` as a plain string with no exit code; keelyard ignored them, so the gate kept asking for a test run
+  that had already passed until it gave up after three blocks.
+- **Fix (memory):** Codex stores its system prompt, AGENTS.md text and hook prompts as messages in its session
+  files. keelyard memory indexed them and fed them back as "earlier sessions" in the brief; it now keeps only what
+  the user and the agent said.
+- New `scripts/codex_e2e.py`: runs the real Codex CLI against a local scripted model (no API key) and checks every
+  hook, the MCP server, AGENTS.md, the proof gate and rewind. New `codex-e2e` CI workflow runs it on every push and
+  weekly.
+- New guide: [Codex in 2 minutes](https://akobirjontulqinovfuture.github.io/keelyard/codex/), and a "Works with
+  Codex" section in the README.
+- `make bench` / `make codex-e2e`, and a "Rerun everything in one command" section with methodology in BENCHMARKS.md.
+- SUPPORT.md, CITATION.cff, roadmap for 1.1.
+
 ## 1.0.3 (Oct 28, 2026)
 
 No code changes; this release updates the PyPI page.

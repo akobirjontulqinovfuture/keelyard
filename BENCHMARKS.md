@@ -1,3 +1,34 @@
+# Benchmarks
+
+## Rerun everything in one command
+
+```bash
+git clone https://github.com/akobirjontulqinovfuture/keelyard && cd keelyard
+pip install -e ".[dev]"
+make bench        # offline: output compression + snapshot speed on your machine, and the session table below
+                  # recomputed from the committed raw logs (bench/session/runs_v4.jsonl)
+make codex-e2e    # keelyard inside the real Codex CLI, no API key (npm i -g @openai/codex first)
+make bench-sessions  # rerun the real OpenCode sessions yourself (free model, slow)
+```
+
+Without `make`: `keelyard bench`, `python bench/session/report.py bench/session/runs_v4.jsonl`,
+`python scripts/codex_e2e.py`.
+
+**Methodology, in short.** `keelyard bench` runs on a fixed corpus of real logs shipped in the package, so the
+`compress` numbers are the same on every machine; tokens are approximated as characters / 4. Snapshot timings and
+the `reads`/`memory` sections depend on your machine and your own agent transcripts, so they will differ. The session
+table comes from real agent runs on one free model with 3–8 repetitions per task: it is indicative, not general.
+Every raw run is in `bench/session/*.jsonl`, and `report.py` exits 1 if a task misses the target, so the table
+cannot be edited by hand without the check failing.
+
+**Measured on Oct 28, 2026** (Linux box, keelyard 1.0.3, `keelyard bench`): output compression 8,887 → 4,253
+approx tokens on the shipped corpus (−52.1%). Biggest wins: `git clone` progress 2,101 → 220, verbose failing
+pytest 1,811 → 658, `npm install --verbose` 2,740 → 1,142. Logs with nothing to drop (a short `cargo build`, a
+passing pytest run) stay the same size, as they should. Snapshot of a 253-file repo: 13 ms median warm, 34 ms
+median cold. `make bench` reproduced the session table below byte for byte from the raw logs.
+
+What is **not** measured yet: Claude Code and Codex sessions with a real model (the Codex check above uses a
+scripted model, so it proves the wiring, not token savings), and cost in dollars (the model was free).
 
 ## Whole-session tokens, keelyard lean vs none (Oct 17, 2026)
 

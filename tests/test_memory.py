@@ -64,3 +64,17 @@ def test_ingest_search_redact(tmp_path):
     assert sum(len(h["snippet"]) for h in mem.search("the", budget_chars=100)) <= 100
     if os.name != "nt":  # Windows has no POSIX modes
         assert (tmp_path / "m.db").stat().st_mode & 0o077 == 0
+
+
+def test_codex_system_prompt_and_injected_context_are_not_memory(tmp_path):
+    from keelyard.memory import read_codex
+
+    f = tmp_path / "rollout.jsonl"
+    msg = lambda role, text: {"type": "response_item", "payload": {  # noqa: E731
+        "type": "message", "role": role, "content": [{"type": "input_text", "text": text}]}}
+    rows = [msg("developer", "You are a coding agent running in the Codex CLI"),
+            msg("user", "# AGENTS.md instructions for /x\n<INSTRUCTIONS>be terse</INSTRUCTIONS>"),
+            msg("user", "<hook_prompt hook_run_id=\"stop:1\">keelyard proof gate</hook_prompt>"),
+            msg("user", "the cache key ignores the locale")]
+    f.write_text("\n".join(json.dumps(r) for r in rows))
+    assert [t.text for t in read_codex(f)] == ["the cache key ignores the locale"]
