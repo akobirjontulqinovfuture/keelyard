@@ -10,7 +10,6 @@
 **Make Claude Code, Codex and OpenCode prove their work, undo any step, and use fewer tokens.**
 
 [![PyPI](https://img.shields.io/pypi/v/keelyard?color=111111&label=pypi)](https://pypi.org/project/keelyard/)
-[![Downloads](https://img.shields.io/pypi/dm/keelyard?color=111111)](https://pypistats.org/packages/keelyard)
 [![Python](https://img.shields.io/pypi/pyversions/keelyard?color=111111)](https://pypi.org/project/keelyard/)
 [![CI](https://img.shields.io/github/actions/workflow/status/akobirjontulqinovfuture/keelyard/ci.yml?branch=main&label=ci&color=178A52)](https://github.com/akobirjontulqinovfuture/keelyard/actions/workflows/ci.yml)
 [![Codex e2e](https://img.shields.io/github/actions/workflow/status/akobirjontulqinovfuture/keelyard/codex-e2e.yml?branch=main&label=codex%20e2e&color=178A52)](https://github.com/akobirjontulqinovfuture/keelyard/actions/workflows/codex-e2e.yml)
