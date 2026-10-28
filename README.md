@@ -13,6 +13,8 @@
 [![Python](https://img.shields.io/pypi/pyversions/keelyard?color=111111)](https://pypi.org/project/keelyard/)
 [![CI](https://img.shields.io/github/actions/workflow/status/akobirjontulqinovfuture/keelyard/ci.yml?branch=main&label=ci&color=178A52)](https://github.com/akobirjontulqinovfuture/keelyard/actions/workflows/ci.yml)
 [![Codex e2e](https://img.shields.io/github/actions/workflow/status/akobirjontulqinovfuture/keelyard/codex-e2e.yml?branch=main&label=codex%20e2e&color=178A52)](https://github.com/akobirjontulqinovfuture/keelyard/actions/workflows/codex-e2e.yml)
+[![Claude Code e2e](https://img.shields.io/github/actions/workflow/status/akobirjontulqinovfuture/keelyard/claude-e2e.yml?branch=main&label=claude%20code%20e2e&color=178A52)](https://github.com/akobirjontulqinovfuture/keelyard/actions/workflows/claude-e2e.yml)
+[![OpenSSF Scorecard](https://api.scorecard.dev/projects/github.com/akobirjontulqinovfuture/keelyard/badge)](https://scorecard.dev/viewer/?uri=github.com/akobirjontulqinovfuture/keelyard)
 [![License](https://img.shields.io/badge/license-Apache--2.0-111111)](https://github.com/akobirjontulqinovfuture/keelyard/blob/main/LICENSE)
 
 [Quickstart](#quickstart-30-seconds) · [Codex](#works-with-codex) · [Why](#why) · [What it does](#what-it-does) · [Docs](https://akobirjontulqinovfuture.github.io/keelyard/) · [Benchmarks](https://github.com/akobirjontulqinovfuture/keelyard/blob/main/BENCHMARKS.md) · [Roadmap](https://github.com/akobirjontulqinovfuture/keelyard/blob/main/ROADMAP.md)
@@ -48,7 +50,7 @@ binary, a local scripted model, no API key, run in CI on every push.
 **[Codex in 2 minutes →](https://akobirjontulqinovfuture.github.io/keelyard/codex/)**
 
 **Works with Claude Code:** `keelyard init --agent claude` writes `.claude/settings.json` hooks, `.mcp.json` and a
-CLAUDE.md block. Checked by hand on Claude Code 2.1.197. **[Claude Code in 2 minutes →](https://akobirjontulqinovfuture.github.io/keelyard/claude-code/)** (OpenCode works too)
+CLAUDE.md block. Checked on Claude Code 2.1.197 by [`scripts/claude_e2e.py`](https://github.com/akobirjontulqinovfuture/keelyard/blob/main/scripts/claude_e2e.py) in CI on every push, no API key. **[Claude Code in 2 minutes →](https://akobirjontulqinovfuture.github.io/keelyard/claude-code/)** (OpenCode works too)
 
 
 <!-- agent-install:start -->

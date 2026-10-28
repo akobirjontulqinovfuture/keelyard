@@ -19,7 +19,7 @@ jobs:
         with:
           python-version: ${{ matrix.python }}
       - run: pip install -e ".[dev]"
-      - run: ruff check src tests bench
+      - run: ruff check src tests bench scripts
       - run: mypy
       - run: pytest -q
       - run: keelyard selftest
@@ -48,3 +48,22 @@ jobs:
           python-version: "3.13"
       - run: pip install mkdocs-material
       - run: mkdocs build --strict
+  coverage:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install -e ".[dev]" pytest-cov
+      - run: pytest -q --cov=keelyard --cov-report=term --cov-report=markdown-append:"$GITHUB_STEP_SUMMARY" --cov-fail-under=70
+  demo:
+    # the runnable example in examples/ must keep working
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install -e . pytest
+      - run: 'bash examples/demo.sh | tee /tmp/demo.log && grep -q "gate: open" /tmp/demo.log'

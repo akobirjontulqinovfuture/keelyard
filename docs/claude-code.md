@@ -4,8 +4,9 @@ keelyard plugs into [Claude Code](https://docs.anthropic.com/en/docs/claude-code
 already supports: lifecycle **hooks** (`.claude/settings.json`), an **MCP server** (`.mcp.json`), and **CLAUDE.md**.
 You keep using Claude Code as usual.
 
-**Checked by hand with Claude Code 2.1.197** (Oct 28, 2026): the real `claude` binary in `-p` mode against a local
-scripted model (`ANTHROPIC_BASE_URL`), so no Anthropic key was used. Unlike the Codex check, this one is not in CI yet.
+**Checked with Claude Code 2.1.197** (Oct 29, 2026) by [`scripts/claude_e2e.py`](https://github.com/akobirjontulqinovfuture/keelyard/blob/main/scripts/claude_e2e.py):
+the real `claude` binary in `-p` mode against a local scripted model (`ANTHROPIC_BASE_URL`), so no Anthropic key is
+used. CI runs it on every push and weekly.
 
 ## 1. Install
 
@@ -70,8 +71,19 @@ Start `claude` in the project and accept the keelyard server. Prefer it for ever
 |---|---|
 | `claude mcp list` shows keelyard from `.mcp.json` | yes (pending approval until accepted) |
 | keelyard MCP tools and the CLAUDE.md block reach the model | yes |
-| all six hook events fire (`PreCompact` not triggered in a short run) | 5 of 6 seen |
+| hooks fire: SessionStart, UserPromptSubmit, PreToolUse, PostToolUse, Stop | yes (`PreCompact` needs a long session) |
 | gate blocks a "Done." after a breaking edit with no test run | yes |
 | gate opens after a passing `pytest` in Claude's Bash | yes, `keelyard status` → proven |
+| `keelyard rewind to 2` brings back the broken edit | yes |
 
 Not checked: token savings with a real Claude model, and `PreCompact` (needs a long session).
+
+## Verify it yourself
+
+```bash
+git clone https://github.com/akobirjontulqinovfuture/keelyard && cd keelyard
+pip install -e . pytest && npm i -g @anthropic-ai/claude-code
+python scripts/claude_e2e.py
+```
+
+Expected output: 11 `PASS` lines.

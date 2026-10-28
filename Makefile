@@ -1,7 +1,7 @@
 # Reviewer shortcuts. Every target runs offline and costs $0.
 PY ?= python
 
-.PHONY: bench bench-sessions codex-e2e test
+.PHONY: bench bench-sessions codex-e2e claude-e2e demo test
 bench:            ## offline benchmarks on this machine + the committed session table, recomputed from raw logs
 	keelyard bench
 	$(PY) bench/session/report.py bench/session/runs_v4.jsonl
@@ -12,6 +12,12 @@ bench-sessions:   ## rerun the real-session benchmark (needs opencode; free mode
 
 codex-e2e:        ## keelyard inside the real Codex CLI with a local scripted model (needs codex on PATH)
 	$(PY) scripts/codex_e2e.py
+
+claude-e2e:       ## keelyard inside the real Claude Code CLI with a local scripted model (needs claude on PATH)
+	$(PY) scripts/claude_e2e.py
+
+demo:             ## replay a whole agent session in a throwaway project and print the proof report path
+	bash examples/demo.sh
 
 test:
 	ruff check src tests bench scripts && mypy && pytest -q

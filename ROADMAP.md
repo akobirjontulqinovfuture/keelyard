@@ -17,7 +17,7 @@ them up. Each item links to an issue where one exists. Ideas welcome in
   ([#4](https://github.com/akobirjontulqinovfuture/keelyard/issues/4), [#7](https://github.com/akobirjontulqinovfuture/keelyard/issues/7), done in 1.1.0)
 - Codex shell test runs count as proof; Codex's own system prompt no longer leaks into memory (done in 1.1.0)
 - [Codex in 2 minutes](https://akobirjontulqinovfuture.github.io/keelyard/codex/) guide (done in 1.1.0)
-- Same scripted-model e2e check for Claude Code and OpenCode, so all three agents are verified the same way
+- Same scripted-model e2e check for Claude Code (`scripts/claude_e2e.py`, done in 1.2.0) and OpenCode (still open)
 - Gemini CLI adapter: hooks + MCP ([#3](https://github.com/akobirjontulqinovfuture/keelyard/issues/3))
 - Codex equivalent of the lean preset (Codex has no agent-config switch for it yet)
 - Token savings measured on Codex with a real model (today only OpenCode sessions are measured)

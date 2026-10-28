@@ -1,5 +1,19 @@
 # Changelog
 
+## 1.2.0 (Oct 29, 2026)
+
+Both big agents checked end to end in CI, and a tighter supply chain.
+- **Claude Code e2e in CI:** `scripts/claude_e2e.py` runs the real Claude Code CLI against a local scripted model
+  (no key, $0): hooks, MCP tools, CLAUDE.md, the proof gate blocking and opening, `status`, `rewind`. 11 checks,
+  on every push and weekly (`claude-e2e` workflow, `make claude-e2e`).
+- **Codex PR review:** `codex-review` workflow reviews same-repo pull requests with `openai/codex-action`
+  (skipped when no `OPENAI_API_KEY` secret is set).
+- **Supply chain:** OpenSSF Scorecard workflow and badge, build provenance attestations for release files,
+  Dependabot for actions and pip, CODEOWNERS.
+- **CI:** coverage job (gate at 70%; 76% today) and the `examples/demo.sh` session replay run on every push;
+  docs deploy on every push to main.
+- **AGENTS.md** for contributors using Codex or another agent: setup, layout, rules.
+
 ## 1.1.1 (Oct 28, 2026)
 
 - Docs: new "Claude Code in 2 minutes" page (docs/claude-code.md): install, `keelyard init --agent claude`, the files it writes, MCP approval, what you see, and what was checked by hand on Claude Code 2.1.197.
