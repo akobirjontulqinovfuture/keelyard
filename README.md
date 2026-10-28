@@ -1,20 +1,36 @@
 <div align="center">
 
-# keelyard
+<a href="https://github.com/akobirjontulqinovfuture/keelyard">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akobirjontulqinovfuture/keelyard/main/assets/brand/hero-dark.png">
+    <img src="https://raw.githubusercontent.com/akobirjontulqinovfuture/keelyard/main/assets/brand/hero-light.png" alt="keelyard: coding agents prove their work before they say done" width="760">
+  </picture>
+</a>
 
-**Your coding agent has to show its work before it can say "done".**<br>
-Every edit is snapshotted, so any step can be undone. Logs are trimmed before they eat the context window.
+**Make Claude Code, Codex and OpenCode prove their work, undo any step, and use fewer tokens.**
 
-[![CI](https://github.com/akobirjontulqinovfuture/keelyard/actions/workflows/ci.yml/badge.svg)](https://github.com/akobirjontulqinovfuture/keelyard/actions/workflows/ci.yml)
-[![PyPI](https://img.shields.io/pypi/v/keelyard?color=111111)](https://pypi.org/project/keelyard/)
-[![License](https://img.shields.io/badge/license-Apache--2.0-111111)](https://github.com/akobirjontulqinovfuture/keelyard/blob/main/LICENSE)
+[![PyPI](https://img.shields.io/pypi/v/keelyard?color=111111&label=pypi)](https://pypi.org/project/keelyard/)
+[![Downloads](https://img.shields.io/pypi/dm/keelyard?color=111111)](https://pypistats.org/packages/keelyard)
 [![Python](https://img.shields.io/pypi/pyversions/keelyard?color=111111)](https://pypi.org/project/keelyard/)
-![Agents](https://img.shields.io/badge/agents-Claude%20Code%20%C2%B7%20Codex%20%C2%B7%20OpenCode-1F6F4A)
-![Status](https://img.shields.io/badge/status-stable-1F6F4A)
+[![CI](https://img.shields.io/github/actions/workflow/status/akobirjontulqinovfuture/keelyard/ci.yml?branch=main&label=ci&color=178A52)](https://github.com/akobirjontulqinovfuture/keelyard/actions/workflows/ci.yml)
+[![License](https://img.shields.io/badge/license-Apache--2.0-111111)](https://github.com/akobirjontulqinovfuture/keelyard/blob/main/LICENSE)
+
+[Quickstart](#quickstart-30-seconds) · [Why](#why) · [What it does](#what-it-does) · [Docs](https://akobirjontulqinovfuture.github.io/keelyard/) · [Benchmarks](https://github.com/akobirjontulqinovfuture/keelyard/blob/main/BENCHMARKS.md) · [Roadmap](https://github.com/akobirjontulqinovfuture/keelyard/blob/main/ROADMAP.md)
 
 <img src="https://raw.githubusercontent.com/akobirjontulqinovfuture/keelyard/main/docs/img/hero.gif" alt="keelyard in a terminal: init, the proof gate stopping an agent that deleted tests, rewind, then proven" width="760">
 
 </div>
+
+## Why
+
+Coding agents are fast, but they end sessions with "done" while tests are still red, and sometimes they delete
+the test that was failing. keelyard sits between the agent and your repo:
+
+- it **won't let the session end** until the tests pass on the files as they are now;
+- it **snapshots every edit**, so a bad step is one `keelyard rewind to <n>` away;
+- it **trims noisy output** so the context window holds errors, not 3,000 passing lines.
+
+Local only, no telemetry, Apache-2.0.
 
 <!-- agent-install:start -->
 ## Install
@@ -58,6 +74,9 @@ gives your config files back byte for byte. Latest `main` instead of the PyPI re
 
 ## What keelyard changes on your machine
 
+<details>
+<summary>Files it touches, network use, and how to uninstall</summary>
+
 - **Only when you run `keelyard init` / `install <agent>`** (project) or **`keelyard init --global`** (user level).
   Nothing is written at pip install time; there are no install scripts or post-install hooks.
 - Agent config it edits: hooks and MCP entries (`.claude/settings.json`, `.mcp.json`, `.codex/hooks.json`,
@@ -69,6 +88,8 @@ gives your config files back byte for byte. Latest `main` instead of the PyPI re
 - Network: none by default and no telemetry. Only `swarm`/`coop` call a model endpoint, and only the one you configure.
 - **Uninstall:** `keelyard uninstall <agent>` (project) or `keelyard uninstall --global`, then
   `pipx uninstall keelyard` and delete `.keelyard/` if you want the snapshots gone.
+
+</details>
 
 ## What it does
 
@@ -118,6 +139,9 @@ and slash commands. Every CLI command takes `--json`; exit codes: `0` ok, `1` er
 
 ## Inspirations
 
+<details>
+<summary>Projects whose ideas shaped keelyard (no code copied)</summary>
+
 Ideas, not code: everything in keelyard is written from scratch. Thanks to
 [rtk](https://github.com/rtk-ai/rtk) (filtered command output),
 [caveman](https://github.com/JuliusBrussee/caveman) and SuperClaude (terse output),
@@ -128,6 +152,8 @@ Ideas, not code: everything in keelyard is written from scratch. Thanks to
 [aider](https://github.com/Aider-AI/aider) (repo map), [claude-mem](https://github.com/thedotmack/claude-mem)
 (session memory), [ccusage](https://github.com/ccusage/ccusage) (usage from local logs) and
 [cline](https://github.com/cline/cline) (checkpoints). Survey: [docs/research/ideas.md](https://github.com/akobirjontulqinovfuture/keelyard/blob/main/docs/research/ideas.md).
+
+</details>
 
 ## Contributing
 

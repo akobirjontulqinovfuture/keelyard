@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.0.3 (Oct 28, 2026)
+
+No code changes; this release updates the PyPI page.
+- New logo and brand assets in `assets/brand/` (mark, lockups, light/dark README banner, social preview, favicons)
+- README: banner, badge row (PyPI, downloads, Python, CI, license), quick links, a short "Why" section,
+  long sections folded into `<details>`
+- Docs site uses the new mark as logo and favicon
+
 ## 1.0.2 (Oct 28, 2026)
 
 Bugs found by turning on mypy (now part of CI on every OS):
