@@ -41,16 +41,48 @@ def _merge(a: dict | None, b: dict | None) -> dict | None:
     return {**a, **b, "hookSpecificOutput": {**ha, **hb}}
 
 
+def _patch_text(tin: dict) -> str:
+    """Patch body from Claude (`input`/`patch`) or Codex (`tool_input.command`)."""
+    for key in ("patch", "input", "command"):
+        val = tin.get(key)
+        if isinstance(val, str) and "*** " in val:
+            return val
+    return ""
+
+
 def _edited_files(tin: dict) -> list[str]:
     f = _file_arg(tin)
     if f:
         return [f]
-    patch = tin.get("patch") or tin.get("input") or ""
-    return re.findall(r"^\*\*\* (?:Update|Add) File: (.+)$", patch, re.M) if isinstance(patch, str) else []
+    patch = _patch_text(tin)
+    return re.findall(r"^\*\*\* (?:Update|Add) File: (.+)$", patch, re.M) if patch else []
 
 
 def _file_arg(tool_input: dict) -> str | None:
     return tool_input.get("file_path") or tool_input.get("filePath") or tool_input.get("path")
+
+
+def _codex_output(out: dict | None) -> dict | None:
+    """Rewrite Claude-only hook fields into the shape Codex CLI 0.165.0 accepts.
+
+    `updatedToolOutput` makes Codex mark the hook failed. `continue: false` with
+    `stopReason` replaces the tool result the model sees (`PostToolUse Stopped`).
+    """
+    if not isinstance(out, dict):
+        return out
+    spec = out.get("hookSpecificOutput")
+    updated = spec.get("updatedToolOutput") if isinstance(spec, dict) else None
+    if not isinstance(updated, dict) or not isinstance(updated.get("stdout"), str):
+        return out
+    parts = []
+    extra = spec.get("additionalContext") if isinstance(spec, dict) else None
+    if isinstance(extra, str) and extra.strip():
+        parts.append(extra.strip())
+    parts.append(updated["stdout"])
+    kept = {k: v for k, v in out.items() if k != "hookSpecificOutput"}
+    kept["continue"] = False
+    kept["stopReason"] = "\n".join(parts)
+    return kept
 
 
 def _filter_bash(cfg: config.Config, tin: dict, resp) -> dict | None:
@@ -239,6 +271,8 @@ def handle(event: str, payload: dict, cfg: config.Config) -> dict | None:
     if event == "PostToolUse":
         out = None
         resp = payload.get("tool_response")
+        if isinstance(resp, str):  # Codex sends the model-facing text, not Claude's {stdout, stderr}
+            resp = {"stdout": resp, "stderr": ""}
         if tool in SHELL_TOOLS and isinstance(resp, dict) and isinstance(resp.get("stdout"), str):
             cmd = tin.get("command") or tin.get("cmd") or ""
             cmd = " ".join(cmd) if isinstance(cmd, list) else str(cmd)
@@ -252,7 +286,7 @@ def handle(event: str, payload: dict, cfg: config.Config) -> dict | None:
             if hint:
                 out = _ctx("PostToolUse", hint)
         if tool in SHELL_TOOLS and sav.get("filter_bash", True):
-            out = _merge(out, _filter_bash(cfg, tin, payload.get("tool_response")))
+            out = _merge(out, _filter_bash(cfg, tin, resp))
         if tool in EDIT_TOOLS_READ:
             f = _file_arg(tin)
             if f and not tin.get("offset") and not tin.get("limit"):
@@ -266,7 +300,7 @@ def handle(event: str, payload: dict, cfg: config.Config) -> dict | None:
         if rew["enabled"] and tool in rew["snapshot_tools"]:
             Shadow(cfg).snapshot(tool=tool, session=sid)
         if tool in EDIT_TOOLS_WRITE and cfg.section("proof").get("auto_test_after_edit"):
-            out = _merge(out, _auto_test(cfg, sid, payload.get("tool_response")))
+            out = _merge(out, _auto_test(cfg, sid, resp))
         return out
 
     if event == "Stop":
@@ -354,6 +388,8 @@ def main(agent: str, event: str) -> int:
     _seen(cfg, agent, event)
     try:
         out = handle(event, payload, cfg)
+        if agent == "codex":
+            out = _codex_output(out)
     except Exception:  # noqa: BLE001
         log = cfg.state / "hook.log"
         with log.open("a", encoding="utf-8") as f:

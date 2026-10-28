@@ -98,7 +98,7 @@ gives your config files back byte for byte. Latest `main` instead of the PyPI re
 | Agent | Hooks (gate, snapshots, filters) | MCP server |
 |---|---|---|
 | Claude Code | `.claude/settings.json` | `.mcp.json` |
-| Codex | `.codex/hooks.json` (not yet checked on a live Codex CLI, see [#7](https://github.com/akobirjontulqinovfuture/keelyard/issues/7)) | `~/.codex/config.toml` (or `.codex/config.toml` with `--codex-project-mcp`) |
+| Codex | `.codex/hooks.json` (checked on Codex CLI 0.165.0) | `~/.codex/config.toml` (or `.codex/config.toml` with `--codex-project-mcp`) |
 | OpenCode | `.opencode/plugins/keelyard.js` | `opencode.json` |
 
 `keelyard init` writes these for you; `keelyard doctor` checks them.

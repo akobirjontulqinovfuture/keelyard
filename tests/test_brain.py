@@ -105,8 +105,10 @@ def test_edit_without_tests_nudges_once_per_file(cfg, project):
 def test_codex_apply_patch_files_are_checked(cfg, project):
     (project / "pay.py").write_text("x = 1\n")
     patch = "*** Begin Patch\n*** Update File: pay.py\n@@\n-x = 1\n+x = 2\n*** End Patch\n"
-    out = hooks.handle("PreToolUse", {"session_id": "s", "tool_name": "apply_patch", "tool_input": {"input": patch}}, cfg)
-    assert "pay.py" in ctx(out)
+    # Claude-style `input`, and Codex CLI which puts the same patch in `tool_input.command`.
+    for key in ("input", "command"):
+        out = hooks.handle("PreToolUse", {"session_id": key, "tool_name": "apply_patch", "tool_input": {key: patch}}, cfg)
+        assert "pay.py" in ctx(out)
 
 
 @pytest.mark.parametrize("rel,files,expected", [
