@@ -17,11 +17,15 @@
 [![OpenSSF Scorecard](https://api.scorecard.dev/projects/github.com/akobirjontulqinovfuture/keelyard/badge)](https://scorecard.dev/viewer/?uri=github.com/akobirjontulqinovfuture/keelyard)
 [![License](https://img.shields.io/badge/license-Apache--2.0-111111)](https://github.com/akobirjontulqinovfuture/keelyard/blob/main/LICENSE)
 
-[Quickstart](#quickstart-30-seconds) · [Codex](#works-with-codex) · [Why](#why) · [What it does](#what-it-does) · [Docs](https://akobirjontulqinovfuture.github.io/keelyard/) · [Benchmarks](https://github.com/akobirjontulqinovfuture/keelyard/blob/main/BENCHMARKS.md) · [Roadmap](https://github.com/akobirjontulqinovfuture/keelyard/blob/main/ROADMAP.md)
+[Quickstart](#quickstart-30-seconds) · [Codex](#works-with-codex) · [Why](#why) · [What it does](#what-it-does) · [Docs](https://akobirjontulqinovfuture.github.io/keelyard/) · [FAQ](https://akobirjontulqinovfuture.github.io/keelyard/faq/) · [Benchmarks](https://github.com/akobirjontulqinovfuture/keelyard/blob/main/BENCHMARKS.md) · [Roadmap](https://github.com/akobirjontulqinovfuture/keelyard/blob/main/ROADMAP.md)
 
 <img src="https://raw.githubusercontent.com/akobirjontulqinovfuture/keelyard/main/docs/img/hero.gif" alt="keelyard in a terminal: init, the proof gate stopping an agent that deleted tests, rewind, then proven" width="760">
 
 </div>
+
+keelyard is an open-source command-line tool and MCP server that stops AI coding agents (Claude Code, Codex CLI,
+OpenCode) from finishing until a passing test run proves their work, snapshots every edit so any step can be undone,
+and trims noisy tool output so sessions use fewer tokens. It runs locally, with no telemetry.
 
 ## Why
 

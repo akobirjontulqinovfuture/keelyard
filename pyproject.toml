@@ -12,7 +12,7 @@ license-files = ["LICENSE"]
 requires-python = ">=3.11"
 authors = [{ name = "Akobir Tulqinov" }]
 maintainers = [{ name = "Akobir Tulqinov" }]
-keywords = ["ai-agents", "claude-code", "codex", "opencode", "mcp", "developer-tools", "llm", "coding-agent", "tests", "rollback", "snapshots", "token-optimization"]
+keywords = ["ai-agents", "claude-code", "codex", "opencode", "mcp", "developer-tools", "llm", "coding-agent", "tests", "rollback", "snapshots", "token-optimization", "agentic-coding", "model-context-protocol", "claude", "openai-codex", "proof-gate"]
 classifiers = [
   "Development Status :: 5 - Production/Stable",
   "Environment :: Console",
@@ -26,6 +26,10 @@ classifiers = [
   "Topic :: Software Development :: Testing",
   "Topic :: Software Development :: Version Control :: Git",
   "Topic :: Software Development :: Quality Assurance",
+  "Topic :: Scientific/Engineering :: Artificial Intelligence",
+  "Operating System :: POSIX :: Linux",
+  "Operating System :: MacOS",
+  "Operating System :: Microsoft :: Windows",
 ]
 # Upper bounds: the next major version is untested. CI runs the versions pip resolves inside these ranges.
 dependencies = ["mcp>=1.2,<3", "httpx>=0.27,<1", "rich>=13.7,<16", "textual>=0.80,<9"]
@@ -44,6 +48,10 @@ Documentation = "https://akobirjontulqinovfuture.github.io/keelyard/"
 Source = "https://github.com/akobirjontulqinovfuture/keelyard"
 Issues = "https://github.com/akobirjontulqinovfuture/keelyard/issues"
 Changelog = "https://github.com/akobirjontulqinovfuture/keelyard/blob/main/CHANGELOG.md"
+"Claude Code guide" = "https://akobirjontulqinovfuture.github.io/keelyard/claude-code/"
+"Codex guide" = "https://akobirjontulqinovfuture.github.io/keelyard/codex/"
+FAQ = "https://akobirjontulqinovfuture.github.io/keelyard/faq/"
+Security = "https://github.com/akobirjontulqinovfuture/keelyard/security/policy"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/keelyard"]

@@ -2,7 +2,7 @@ name: docs
 on:
   push:
     branches: [main]
-    paths: [docs/**, mkdocs.yml, README.md]
+    paths: [docs/**, mkdocs.yml, README.md, overrides/**, hooks/**, llms.txt, pyproject.toml]
   workflow_dispatch:
 permissions:
   contents: read

@@ -1,5 +1,6 @@
 site_name: keelyard
-site_description: Make coding agents prove their work, undo any step, and keep their context small.
+site_description: keelyard makes Claude Code, Codex and OpenCode prove their work with passing tests, undo any step, and use fewer tokens.
+site_url: https://akobirjontulqinovfuture.github.io/keelyard/
 repo_url: https://github.com/akobirjontulqinovfuture/keelyard
 repo_name: keelyard
 edit_uri: edit/main/docs/
@@ -8,6 +9,7 @@ exclude_docs: |
   demo/
 theme:
   name: material
+  custom_dir: overrides
   font: false
   logo: assets/logo.svg
   favicon: assets/logo.svg
@@ -22,6 +24,7 @@ theme:
   icon:
     repo: fontawesome/brands/github
 extra_css: [assets/extra.css]
+hooks: [hooks/seo.py]
 markdown_extensions:
   - admonition
   - attr_list
@@ -57,6 +60,8 @@ nav:
       - Configuration: config.md
       - Exit codes and JSON: json.md
   - Troubleshooting: troubleshooting.md
+  - FAQ: faq.md
+  - Alternatives: alternatives.md
   - Benchmarks: BENCHMARKS.md
   - Landscape: landscape.md
   - Feature matrix: feature-matrix.md

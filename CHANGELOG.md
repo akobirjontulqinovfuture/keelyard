@@ -13,6 +13,10 @@ Both big agents checked end to end in CI, and a tighter supply chain.
   SHA, least-privilege workflow tokens, private vulnerability reporting on and a fuller SECURITY.md.
 - **CI:** coverage job (gate at 70%; 76% today) and the `examples/demo.sh` session replay run on every push;
   docs deploy on every push to main.
+- **Docs findability:** per-page descriptions, canonical URLs, OpenGraph/Twitter cards, JSON-LD
+  (SoftwareApplication, FAQPage), sitemap.xml, robots.txt, llms.txt and llms-full.txt on the docs site; new
+  [FAQ](https://akobirjontulqinovfuture.github.io/keelyard/faq/) and
+  [Alternatives](https://akobirjontulqinovfuture.github.io/keelyard/alternatives/) pages; PyPI keywords, classifiers and links.
 - **AGENTS.md** for contributors using Codex or another agent: setup, layout, rules.
 
 ## 1.1.1 (Oct 28, 2026)
