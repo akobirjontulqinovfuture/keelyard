@@ -4,19 +4,27 @@ build-backend = "hatchling.build"
 
 [project]
 name = "keelyard"
-version = "1.0.0"
-description = "Proof-of-work gate, rewind, helper swarm, usage saver and shared memory for Claude Code, Codex and OpenCode."
+version = "1.0.1"
+description = "Make AI coding agents (Claude Code, Codex, OpenCode) prove their work before they say done, undo any step, and use fewer tokens."
 readme = "README.md"
 license = "Apache-2.0"
 license-files = ["LICENSE"]
 requires-python = ">=3.11"
 authors = [{ name = "Akobir Tulqinov" }]
-keywords = ["ai-agents", "claude-code", "codex", "opencode", "mcp", "developer-tools"]
+maintainers = [{ name = "Akobir Tulqinov" }]
+keywords = ["ai-agents", "claude-code", "codex", "opencode", "mcp", "developer-tools", "llm", "coding-agent", "tests", "rollback", "snapshots", "token-optimization"]
 classifiers = [
   "Development Status :: 5 - Production/Stable",
   "Environment :: Console",
   "Intended Audience :: Developers",
+  "Operating System :: OS Independent",
   "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3 :: Only",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: 3.13",
+  "Topic :: Software Development :: Testing",
+  "Topic :: Software Development :: Version Control :: Git",
   "Topic :: Software Development :: Quality Assurance",
 ]
 # Upper bounds: the next major version is untested. CI runs the versions pip resolves inside these ranges.
@@ -32,6 +40,10 @@ keelyard = "keelyard.cli:main"
 
 [project.urls]
 Homepage = "https://github.com/akobirjontulqinovfuture/keelyard"
+Documentation = "https://akobirjontulqinovfuture.github.io/keelyard/"
+Source = "https://github.com/akobirjontulqinovfuture/keelyard"
+Issues = "https://github.com/akobirjontulqinovfuture/keelyard/issues"
+Changelog = "https://github.com/akobirjontulqinovfuture/keelyard/blob/main/CHANGELOG.md"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/keelyard"]

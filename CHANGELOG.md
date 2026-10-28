@@ -1,5 +1,15 @@
 # Changelog
 
+## 1.0.1 (Oct 28, 2026)
+
+- Install docs (README, AGENTS-install.md, llms.txt, docs) now use `pipx install keelyard` / `pip install keelyard` from PyPI
+- README renders on PyPI: absolute links and image URL; Python versions badge from PyPI
+- PyPI metadata: clearer description, Python 3.11 to 3.13 classifiers, more keywords, Documentation, Source, Issues and Changelog links
+- MCP handshake reports keelyard's version (was empty)
+- `keelyard --json <command>` works the same as `keelyard <command> --json`
+- `keelyard proof test` defaults to the `after` phase
+- `keelyard --help` lists `state`; `doctor` says "1 step", not "1 steps"
+
 ## 1.0.0 (Oct 28, 2026, first PyPI release)
 
 First stable release.

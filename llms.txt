@@ -4,7 +4,7 @@
 
 Install (agents: only when the user explicitly asks; show these commands and get their confirmation first):
 
-    pipx install git+https://github.com/akobirjontulqinovfuture/keelyard
+    pipx install keelyard
     keelyard init --global
     keelyard doctor --json   # expect "ok": true
 

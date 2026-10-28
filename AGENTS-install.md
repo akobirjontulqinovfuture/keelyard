@@ -9,10 +9,10 @@ confirmation. `init --global` edits user-level config for every project, so it n
 1. Install the CLI (Python 3.11+ and git required):
 
    ```sh
-   pipx install git+https://github.com/akobirjontulqinovfuture/keelyard
+   pipx install keelyard
    ```
 
-   No pipx: `python -m pip install --user git+https://github.com/akobirjontulqinovfuture/keelyard`, and make sure the
+   No pipx: `python -m pip install --user keelyard`, and make sure the
    scripts folder is on PATH (`keelyard --version` must work).
 
 2. Wire every agent for every project of this user:

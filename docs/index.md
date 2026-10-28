@@ -7,7 +7,7 @@ and OpenCode.</p>
 ![keelyard in a terminal](img/hero.gif)
 
 ```bash
-pipx install git+https://github.com/akobirjontulqinovfuture/keelyard
+pipx install keelyard
 cd your-project
 keelyard init
 ```

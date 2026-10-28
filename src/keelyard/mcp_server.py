@@ -43,6 +43,9 @@ read_file(ranges) -> edit (auto-snapshotted; rewind_to undoes) -> run_compact ->
 -> proof_check each item -> proof_status proven. Step-by-step guides: workflow("plan"|"debug"|"review")."""
 
 mcp = _Server("keelyard", instructions=INSTRUCTIONS)
+for _attr in ("_lowlevel_server", "_mcp_server"):  # report keelyard's version in the MCP handshake (serverInfo)
+    if hasattr(mcp, _attr):
+        getattr(mcp, _attr).version = __version__
 
 
 def _ann(title: str, read_only: bool = False, destructive: bool = False, idempotent: bool = False, open_world: bool = False):

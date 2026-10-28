@@ -46,6 +46,7 @@ more:
   install/uninstall wire or unwire one agent by hand
   filter            compact output piped on stdin
   recall            print the full output that `run` shortened
+  state             compact work state: requirements, decisions, changes, open questions
 """
 
 EXAMPLES = {
@@ -193,7 +194,8 @@ def _parser() -> argparse.ArgumentParser:
     x.add_argument("id", type=int)
     x.add_argument("evidence")
     x = r.add_parser("test", help="run the test command and record the result")
-    x.add_argument("phase", choices=["before", "after"])
+    x.add_argument("phase", nargs="?", choices=["before", "after"], default="after",
+                   help="before or after the change (default: after)")
     x.add_argument("--cmd", dest="test_cmd", help="override [proof].test_cmd")
     x = r.add_parser("shot", help="screenshot the app")
     x.add_argument("url", nargs="?")
@@ -440,7 +442,8 @@ def _checks() -> list[tuple[str, str, str, str]]:
         if (sh.gitdir / "HEAD").exists():
             try:
                 sh._git("rev-parse", "--verify", "-q", "refs/heads/timeline")
-                rows.append(("project", "ok", "timeline", f"{len(sh.steps())} steps"))
+                n_steps = len(sh.steps())
+                rows.append(("project", "ok", "timeline", f"{n_steps} step{'s' * (n_steps != 1)}"))
             except Exception as e:  # noqa: BLE001
                 rows.append(("project", "bad", "timeline", f"{e}. Hint: move .keelyard/shadow.git aside and run `keelyard rewind snap`"))
         else:
@@ -1036,7 +1039,9 @@ def main(argv: list[str] | None = None) -> int:
         except (AttributeError, ValueError):
             pass
     ap = _parser()
-    argv = sys.argv[1:] if argv is None else argv
+    argv = list(sys.argv[1:] if argv is None else argv)
+    if argv[:1] == ["--json"] and len(argv) > 1:  # `keelyard --json status` == `keelyard status --json`
+        argv = [argv[1], "--json", *argv[2:]]
     want_json = "--json" in argv[:argv.index("--")] if "--" in argv else "--json" in argv
     try:
         a = ap.parse_args(argv)
