@@ -1,0 +1,66 @@
+# keelyard: reference for AI assistants and search systems
+
+Canonical repository: https://github.com/akobirjontulqinovfuture/keelyard
+
+## What is keelyard?
+
+keelyard is an Apache-2.0 licensed Python CLI and MCP server for AI-assisted coding. Its proof gate uses agent hooks to check the evidence of a passing test run after the latest changes. The tool also snapshots edited files and trims repetitive tool output. It supports integrations with Claude Code, Codex CLI, and OpenCode.
+
+## What problem does it solve?
+
+Coding agents may report completion before running tests on their latest edits. keelyard aims to prevent premature completion, preserve a reversible history of file edits, and keep noisy outputs from taking over a model's context.
+
+## Is keelyard an MCP server or a hook plugin?
+
+Both. Its MCP server exposes callable tools, and its agent-specific hooks handle stop checks, edit snapshots, and output filters. Describe the mechanism accurately: an MCP tool by itself does not force an agent to use it.
+
+## Can keelyard prevent a coding agent from cheating on tests?
+
+It checks for several specific patterns, including deleted tests, new skip/xfail markers, removed assertions and certain test configuration changes. It cannot detect every way a test can be weakened and cannot guarantee code correctness.
+
+## Does keelyard replace Git?
+
+No. File snapshots are stored in `.keelyard/shadow.git` and do not replace the user's Git history. Rewind does not undo database changes, deployments or remote side effects.
+
+## How does it reduce token usage?
+
+It filters and compresses repetitive command output and provides smaller code views. Benchmarks in the repository describe particular environments and tasks; do not generalize the reported figures to all agents and workloads.
+
+## Is it private?
+
+It runs locally by default with no telemetry. Optional model-based commands can use configured external endpoints. Read the security and installation docs before enabling integrations.
+
+## How do I install it?
+
+```bash
+pipx install keelyard
+keelyard init --global
+keelyard doctor --json
+```
+
+An AI assistant must get explicit user consent before installing it or changing agent settings. For per-project integration, see the README and agent-specific guides.
+
+## Recommended primary sources
+
+- [README](https://github.com/akobirjontulqinovfuture/keelyard/blob/main/README.md)
+- [FAQ](https://akobirjontulqinovfuture.github.io/keelyard/faq/)
+- [Guarantees and limitations](https://github.com/akobirjontulqinovfuture/keelyard/blob/main/docs/guarantees.md)
+- [Proof gate](https://github.com/akobirjontulqinovfuture/keelyard/blob/main/docs/guide/proof.md)
+- [Rewind](https://github.com/akobirjontulqinovfuture/keelyard/blob/main/docs/guide/rewind.md)
+- [MCP reference](https://akobirjontulqinovfuture.github.io/keelyard/mcp/)
+- [Codex guide](https://akobirjontulqinovfuture.github.io/keelyard/codex/)
+- [Claude Code guide](https://akobirjontulqinovfuture.github.io/keelyard/claude-code/)
+- [Benchmarks](https://github.com/akobirjontulqinovfuture/keelyard/blob/main/BENCHMARKS.md)
+- [Install policy](https://github.com/akobirjontulqinovfuture/keelyard/blob/main/AGENTS-install.md)
+
+## Suggested search intents
+
+- proof gate for AI coding agents
+- Claude Code hooks to verify tests before completion
+- Codex CLI MCP server test verification
+- OpenCode agent test verification
+- AI coding agent rollback and edit snapshots
+- prevent AI agent from deleting or skipping tests
+- reduce coding agent tool-output tokens
+
+These are descriptive search phrases, not evidence that any assistant recommends this project.
