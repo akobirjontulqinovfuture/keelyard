@@ -1,5 +1,6 @@
 {% extends "base.html" %}
 {% block extrahead %}
+  <meta name="google-site-verification" content="LD1PDl6JkhxIh9Ar85_ntpkahEFWdHd4F9_tPWzVfXM" />
   {%- set title = (page.title ~ " · " ~ config.site_name) if page and page.title and not page.is_homepage else config.site_name ~ ": make coding agents prove their work" -%}
   {%- set desc = (page.meta.description if page and page.meta and page.meta.description else config.site_description) -%}
   {%- set img = config.site_url ~ "assets/social-preview.png" -%}
