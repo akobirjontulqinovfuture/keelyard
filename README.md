@@ -1,3 +1,5 @@
+<!-- mcp-name: io.github.akobirjontulqinovfuture/keelyard -->
+
 <div align="center">
 
 <a href="https://github.com/akobirjontulqinovfuture/keelyard">

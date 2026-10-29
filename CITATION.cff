@@ -1,4 +1,4 @@
-cff-version: 1.2.0
+cff-version: 1.2.1
 message: "If you use keelyard in research or a write-up, please cite it as below."
 title: "keelyard: make AI coding agents prove their work, undo any step, and use fewer tokens"
 type: software

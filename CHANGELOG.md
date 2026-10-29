@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.2.1 (Oct 29, 2026)
+
+Listing metadata only, no code changes.
+- `server.json` for the official MCP Registry (`io.github.akobirjontulqinovfuture/keelyard`, PyPI, stdio via `keelyard mcp`)
+  and the `mcp-name` ownership marker in the README.
+- `glama.json` with the maintainer for the Glama MCP directory.
+
 ## 1.2.0 (Oct 29, 2026)
 
 Both big agents checked end to end in CI, and a tighter supply chain.

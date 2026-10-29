@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "keelyard"
-version = "1.2.0"
+version = "1.2.1"
 description = "Make AI coding agents (Claude Code, Codex, OpenCode) prove their work before they say done, undo any step, and use fewer tokens."
 readme = "README.md"
 license = "Apache-2.0"
