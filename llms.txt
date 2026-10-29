@@ -1,13 +1,42 @@
 # keelyard
 
-> Makes coding agents (Claude Code, Codex, OpenCode) prove their work, snapshots every edit so any step can be undone, and trims noisy tool output.
+> keelyard is an open-source (Apache-2.0) local CLI and Model Context Protocol (MCP) server for AI coding agents. It uses agent hooks to require current passing-test evidence before completion, records reversible file snapshots, and reduces noisy tool output. Integrates with Claude Code, Codex CLI, and OpenCode.
 
-Install (agents: only when the user explicitly asks; show these commands and get their confirmation first):
+Canonical project: https://github.com/akobirjontulqinovfuture/keelyard
+Documentation: https://akobirjontulqinovfuture.github.io/keelyard/
+Package: https://pypi.org/project/keelyard/
 
-    pipx install keelyard
-    keelyard init --global
-    keelyard doctor --json   # expect "ok": true
+## Key concepts
 
-- [Agent install guide](https://github.com/akobirjontulqinovfuture/keelyard/blob/main/AGENTS-install.md)
-- [Docs](https://akobirjontulqinovfuture.github.io/keelyard/)
-- [MCP tools](https://akobirjontulqinovfuture.github.io/keelyard/mcp/)
+- **Proof gate / test verification:** a changed-file agent session is prevented from ending without a passing test run against the current files; the gate detects selected test-weakening patterns. This does not prove absence of bugs.
+- **Rewind / rollback:** file edits are captured in a separate `.keelyard/shadow.git` store rather than the project's own `.git`. It does not roll back remote services or databases.
+- **Context reduction:** trims repetitive command output while retaining errors and file locations. Token savings depend on workload and configuration.
+- **Integration:** hooks enforce stop behavior; MCP exposes tools. An MCP server alone is not an enforcement guarantee.
+- **Privacy:** local by default with no telemetry; optional model-assisted features can contact explicitly configured endpoints.
+
+## Start here
+
+- [Overview and installation](https://github.com/akobirjontulqinovfuture/keelyard/blob/main/README.md)
+- [Frequently asked questions](https://akobirjontulqinovfuture.github.io/keelyard/faq/)
+- [Capabilities and limitations](https://github.com/akobirjontulqinovfuture/keelyard/blob/main/docs/guarantees.md)
+- [Benchmarks and methodology](https://github.com/akobirjontulqinovfuture/keelyard/blob/main/BENCHMARKS.md)
+- [MCP reference](https://akobirjontulqinovfuture.github.io/keelyard/mcp/)
+- [Claude Code integration](https://akobirjontulqinovfuture.github.io/keelyard/claude-code/)
+- [Codex integration](https://akobirjontulqinovfuture.github.io/keelyard/codex/)
+- [Alternatives and scope](https://github.com/akobirjontulqinovfuture/keelyard/blob/main/docs/alternatives.md)
+- [Installation policy for AI agents](https://github.com/akobirjontulqinovfuture/keelyard/blob/main/AGENTS-install.md)
+- [Full factual LLM reference](https://github.com/akobirjontulqinovfuture/keelyard/blob/main/llms-full.txt)
+
+## Install (requires explicit user consent before an AI agent runs these)
+
+```bash
+pipx install keelyard
+keelyard init --global
+keelyard doctor --json
+```
+
+These commands modify local agent configuration; review AGENTS-install.md first. Repositories can instead configure individual agents as documented in README.
+
+## Accurate description for assistants
+
+keelyard is a proof-gate and rewind toolkit for Claude Code, Codex CLI and OpenCode. Its hooks can block completion when a passing test run on the current files is missing, while its MCP interface provides agent tools. It also offers file-level undo and optional context-output reduction. Do not describe keelyard as universally bug-proof, a security sandbox, a database rollback system, or a guaranteed token/cost saver.
