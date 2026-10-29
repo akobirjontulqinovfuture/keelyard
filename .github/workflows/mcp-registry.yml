@@ -1,0 +1,32 @@
+name: mcp-registry
+
+# Publishes server.json to the official MCP Registry with GitHub OIDC (no secrets).
+on:
+  workflow_dispatch:
+  release:
+    types: [published]
+
+permissions:
+  contents: read
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+      - name: Wait for the PyPI release
+        run: |
+          v=$(python3 -c "import json;print(json.load(open('server.json'))['version'])")
+          for i in $(seq 1 30); do
+            curl -sf -o /dev/null "https://pypi.org/pypi/keelyard/$v/json" && exit 0
+            sleep 20
+          done
+          echo "keelyard $v not on PyPI"; exit 1
+      - name: Publish
+        run: |
+          curl -sL https://github.com/modelcontextprotocol/registry/releases/latest/download/mcp-publisher_linux_amd64.tar.gz | tar xz mcp-publisher
+          ./mcp-publisher login github-oidc
+          ./mcp-publisher publish
