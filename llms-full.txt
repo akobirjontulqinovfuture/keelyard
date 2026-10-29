@@ -1,0 +1,2492 @@
+# keelyard documentation (full text)
+
+Source: https://github.com/akobirjontulqinovfuture/keelyard · Docs: https://akobirjontulqinovfuture.github.io/keelyard/
+
+
+---
+
+URL: https://akobirjontulqinovfuture.github.io/keelyard/
+
+# keelyard
+
+<p class="lede">Your coding agent has to show its work before it can say "done". Every edit is snapshotted, so any
+step can be undone. Logs are trimmed before they eat the context window. keelyard works with Claude Code, Codex
+and OpenCode.</p>
+
+![keelyard in a terminal](img/hero.gif)
+
+```bash
+pipx install keelyard
+cd your-project
+keelyard init
+```
+
+That is the whole setup. `keelyard init` finds the agents on your machine and wires each one: hooks, the MCP
+server, a short guide in `CLAUDE.md` or `AGENTS.md`, and a skill plus slash commands for Claude Code.
+After that it takes a first snapshot.
+
+## The pieces
+
+| | What you get |
+|---|---|
+| [Proof gate](guide/proof.md) | The agent can't finish until there is a checklist, evidence for every item, and a passing test run after its last edit. You get a one-file HTML report. |
+| [Rewind](guide/rewind.md) | A snapshot after every edit, in a separate git repo. Undo any step and fork from any step. |
+| [Smaller context](guide/context.md) | Output filters that keep every failure, deduplicated reads, `project_map` / `outline` / `find_symbol`. |
+| [Memory and usage](guide/memory.md) | Search across past sessions from all three agents. Tokens and cost from local logs. |
+| [Swarm](guide/swarm.md) | Bulk reading and drafting on a cheap model, with every citation checked. |
+| [Arena](guide/arena.md) | One task, several agents and models: pass rate, time and tokens side by side. |
+
+## What it is not
+
+keelyard is not a proxy and does not read your API traffic. It does not change your `.git`, and it does not send
+anything over the network unless you configure a helper model for `swarm`. Every number in these docs was
+measured. See [Benchmarks](BENCHMARKS.md), including the results that did not go our way.
+
+
+---
+
+URL: https://akobirjontulqinovfuture.github.io/keelyard/quickstart/
+
+# Quickstart
+
+## Install
+
+keelyard needs Python 3.11 or newer and git.
+
+```bash
+pipx install keelyard
+```
+
+`pip install` works too. Agents call `keelyard` by name, so it has to be on `PATH`. `keelyard doctor`
+checks that.
+
+## Set up a project
+
+```bash
+cd your-project
+keelyard init
+```
+
+![keelyard init](img/cli-init.png)
+
+- With no flags, every agent found on this machine is wired. To pick agents, use `--agent claude`
+  (you can repeat the flag). To see what would change without changing anything, use `--dry-run`.
+- **Codex** needs two extra steps. Paste the printed `[mcp_servers.keelyard]` block into
+  `~/.codex/config.toml`, then run `/hooks` once inside Codex to trust the hooks.
+- Running `init` again is safe. It updates keelyard's own entries and leaves yours alone.
+
+## Check it
+
+```bash
+keelyard doctor     # installation and wiring; exits 3 if something is broken
+keelyard selftest   # a scripted agent does a full task through MCP and hooks, in a temp folder
+```
+
+![keelyard doctor](img/cli-doctor.png)
+
+## Use your agent
+
+Work as usual. While the agent works:
+
+```bash
+keelyard status          # snapshots, proof checklist, what is still open
+keelyard rewind list     # every step, newest last
+keelyard rewind to 7     # put files back as they were after step 7
+keelyard proof report    # the HTML report for this session
+```
+
+![keelyard status](img/cli-status.png)
+
+## Remove it
+
+```bash
+keelyard uninstall claude    # removes only keelyard's entries
+rm -rf .keelyard             # snapshots, proof bundles, caches
+```
+
+
+---
+
+URL: https://akobirjontulqinovfuture.github.io/keelyard/codex/
+
+# keelyard + Codex in 2 minutes
+
+keelyard plugs into the [Codex CLI](https://github.com/openai/codex) through three things Codex already supports:
+lifecycle **hooks** (`.codex/hooks.json`), an **MCP server**, and **AGENTS.md**. You keep using Codex as usual.
+
+**Checked with Codex CLI 0.165.0** (Oct 28, 2026) by [`scripts/codex_e2e.py`](https://github.com/akobirjontulqinovfuture/keelyard/blob/main/scripts/codex_e2e.py),
+which runs the real Codex binary against a local scripted model, so it needs no OpenAI key. CI runs it on every push.
+
+## 1. Install
+
+```bash
+pipx install keelyard        # or: pip install keelyard
+npm i -g @openai/codex       # if you don't have Codex yet
+```
+
+## 2. Wire up your project
+
+```bash
+cd your-project
+keelyard init --agent codex --codex-project-mcp
+keelyard doctor
+```
+
+This writes:
+
+| File | What it holds |
+|---|---|
+| `.codex/hooks.json` | `SessionStart`, `UserPromptSubmit`, `PreToolUse`, `PostToolUse`, `Stop` → `keelyard hook codex <event>` |
+| `.codex/config.toml` | `[mcp_servers.keelyard]` (only with `--codex-project-mcp`) |
+| `AGENTS.md` | a short block between `<!-- keelyard:start -->` and `<!-- keelyard:end -->` |
+| `.keelyard/` | config and snapshots (a separate git dir; your `.git` is never touched) |
+
+Originals are kept, and `keelyard uninstall codex` restores them byte for byte.
+
+Prefer the MCP server for every project? Put it in `~/.codex/config.toml` instead (or run
+`codex mcp add keelyard -- keelyard mcp`):
+
+```toml
+[mcp_servers.keelyard]
+command = "keelyard"
+args = ["mcp"]
+```
+
+`codex mcp list` should now show `keelyard  …  enabled`.
+
+The AGENTS.md block keelyard adds (lean preset) is three lines:
+
+```markdown
+## keelyard
+
+Every edit is snapshotted (undo: `keelyard rewind list`, `keelyard rewind to N`). Your shell test runs are the proof:
+run the project's tests after your last edit before you finish.
+Be terse: no preamble or recap. Keep code exact.
+```
+
+## 3. Trust the hooks once
+
+Codex only runs hooks you have reviewed. Start `codex` in the project, type **`/hooks`**, and trust the five keelyard
+hooks. Codex also needs the project itself to be trusted to load `.codex/` (it asks the first time).
+For one-off automation where you vetted the hooks yourself, `codex exec --dangerously-bypass-hook-trust` skips the
+review for that run.
+
+## 4. What you see
+
+- **Session start:** a brief with the project's test command and a baseline test result.
+- **Every edit** (`apply_patch` or a shell command that changes files) is snapshotted:
+  `keelyard rewind list`, `keelyard rewind to 3`.
+- **When Codex says "done" with red or unrun tests,** the `Stop` hook sends it back with what is missing:
+
+  ```text
+  keelyard proof gate: you changed files but have not proven the work yet.
+  - No test run after the last edit (proof_run_tests phase='after', or `keelyard proof test after`).
+  Run the project's tests in your shell (that counts as proof), or use the keelyard proof tools, then finish.
+  ```
+
+  A test run in Codex's own shell counts as proof; Codex does not need to call keelyard. The gate gives up after
+  three blocks so a session can never loop forever.
+- **Afterwards:** `keelyard status` shows `proof proven`, the evidence and the timeline.
+
+## Verify it yourself
+
+```bash
+git clone https://github.com/akobirjontulqinovfuture/keelyard && cd keelyard
+pip install -e . pytest && npm i -g @openai/codex
+python scripts/codex_e2e.py
+```
+
+Expected output: 11 `PASS` lines (hooks file, AGENTS.md, `codex mcp list`, MCP tools and AGENTS.md reaching the
+model, each hook event firing, the gate blocking a red "Done.", the gate opening after a passing run,
+`keelyard status` proven, rewind restoring the broken edit).
+
+## Known limits with Codex
+
+- **Output filtering does not apply.** Codex hooks can't replace a shell result yet, so keelyard's log compression
+  works through the MCP `run_compact` tool only, not on Codex's own shell calls.
+- **No lean switch for Codex tools.** The lean preset can turn some Claude Code / OpenCode tools off; Codex has no
+  config for that, so on Codex lean means the shorter brief and AGENTS.md block.
+- **Token savings on Codex are not measured yet.** The e2e check uses a scripted model, which proves the wiring,
+  not savings. Real-model numbers are on the [roadmap](https://github.com/akobirjontulqinovfuture/keelyard/blob/main/ROADMAP.md).
+- Codex's own sandbox rejects some commands (for example `rm -rf`) before keelyard's `PreToolUse` sees them.
+
+
+---
+
+URL: https://akobirjontulqinovfuture.github.io/keelyard/claude-code/
+
+# keelyard + Claude Code in 2 minutes
+
+keelyard plugs into [Claude Code](https://docs.anthropic.com/en/docs/claude-code) through three things Claude Code
+already supports: lifecycle **hooks** (`.claude/settings.json`), an **MCP server** (`.mcp.json`), and **CLAUDE.md**.
+You keep using Claude Code as usual.
+
+**Checked with Claude Code 2.1.197** (Oct 29, 2026) by [`scripts/claude_e2e.py`](https://github.com/akobirjontulqinovfuture/keelyard/blob/main/scripts/claude_e2e.py):
+the real `claude` binary in `-p` mode against a local scripted model (`ANTHROPIC_BASE_URL`), so no Anthropic key is
+used. CI runs it on every push and weekly.
+
+## 1. Install
+
+```bash
+pipx install keelyard                       # or: pip install keelyard
+npm i -g @anthropic-ai/claude-code          # if you don't have Claude Code yet
+```
+
+## 2. Wire up your project
+
+```bash
+cd your-project
+keelyard init --agent claude
+keelyard doctor
+```
+
+This writes:
+
+| File | What it holds |
+|---|---|
+| `.claude/settings.json` | hooks `SessionStart`, `UserPromptSubmit`, `PreCompact`, `PreToolUse`, `PostToolUse`, `Stop` → `keelyard hook claude <event>`; lean preset also sets `env` (capped tool output, no extra model calls) |
+| `.mcp.json` | `mcpServers.keelyard` → `keelyard mcp` (project scope) |
+| `CLAUDE.md` | a short block between `<!-- keelyard:start -->` and `<!-- keelyard:end -->` |
+| `.claude/skills/keelyard/` | a keelyard skill |
+| `.claude/commands/keelyard/` | `/keelyard:prove`, `review`, `status`, `debug`, `plan`, `undo` |
+| `.keelyard/` | config and snapshots (a separate git dir; your `.git` is never touched) |
+
+Originals are kept, and `keelyard uninstall claude` restores them. For every project at once, use
+`keelyard init --global` (writes `~/.claude/settings.json`, `~/.claude.json` and `~/.claude/CLAUDE.md`).
+
+## 3. Approve the MCP server once
+
+Claude Code asks before it starts servers from a project's `.mcp.json`. Until then:
+
+```text
+$ claude mcp list
+keelyard: keelyard mcp - ⏸ Pending approval (run `claude` to approve)
+```
+
+Start `claude` in the project and accept the keelyard server. Prefer it for every project? Run
+`claude mcp add --scope user keelyard -- keelyard mcp` instead. The hooks need no approval.
+
+## 4. What you see
+
+- **Session start:** a brief with the project's test command and a baseline test result.
+- **Every edit** (Edit/Write or a Bash command that changes files) is snapshotted:
+  `keelyard rewind list`, `keelyard rewind to 3`.
+- **When Claude says "done" with red or unrun tests,** the `Stop` hook sends it back:
+
+  ```text
+  Stop hook feedback:
+  keelyard proof gate: you changed files but have not proven the work yet.
+  ```
+
+  A test run in Claude's own Bash tool counts as proof. The gate gives up after three blocks, so it never loops.
+- **Tools:** `mcp__keelyard__proof_check`, `proof_run_tests`, `memory_search`, `find_symbol`, … are available to the model.
+- **Afterwards:** `keelyard status` shows `proof proven`, the evidence and the timeline.
+
+## What was checked (Claude Code 2.1.197)
+
+| Check | Result |
+|---|---|
+| `claude mcp list` shows keelyard from `.mcp.json` | yes (pending approval until accepted) |
+| keelyard MCP tools and the CLAUDE.md block reach the model | yes |
+| hooks fire: SessionStart, UserPromptSubmit, PreToolUse, PostToolUse, Stop | yes (`PreCompact` needs a long session) |
+| gate blocks a "Done." after a breaking edit with no test run | yes |
+| gate opens after a passing `pytest` in Claude's Bash | yes, `keelyard status` → proven |
+| `keelyard rewind to 2` brings back the broken edit | yes |
+
+Not checked: token savings with a real Claude model, and `PreCompact` (needs a long session).
+
+## Verify it yourself
+
+```bash
+git clone https://github.com/akobirjontulqinovfuture/keelyard && cd keelyard
+pip install -e . pytest && npm i -g @anthropic-ai/claude-code
+python scripts/claude_e2e.py
+```
+
+Expected output: 11 `PASS` lines.
+
+
+---
+
+URL: https://akobirjontulqinovfuture.github.io/keelyard/guarantees/
+
+# What keelyard guarantees, and what it doesn't
+
+keelyard is a local tool that runs as you. It makes an agent's claims checkable and its file edits undoable.
+It is not a sandbox. This page lists exactly what holds and where the limits are.
+
+## Proof
+
+| keelyard guarantees | it does not guarantee |
+|---|---|
+| "proven" means a passing test run was recorded **for the current file contents**. Any change to a snapshotted file after that run (even one made without a hook firing) reopens the proof. | That your tests are good. A proof is only as strong as the test suite. |
+| Evidence is shown at three levels, never merged: **test-verified** (keelyard ran the test command itself), **command-succeeded** (the agent ran tests in its shell and the agent harness reported the result), **agent-claimed** (the agent wrote it, e.g. a checklist tick or `accept-tests`). | That agent-claimed evidence is true. It is shown so you can judge it. |
+| Proof bundles are signed with a key kept outside the project (`<data home>/keelyard/proof.key`, mode 600). A bundle edited by hand, or with its signature removed, is never reported as proven again in that session. | Protection against a process that deliberately reads that key. Anything running as your user can. Signing stops casual forging, not a determined attacker. |
+| Weakened tests keep the proof open: deleted test files, fewer test functions or assertions, new `skip`/`xfail`/`only` markers, changed or added test config, fewer tests in the run than before. Compared against the files as they were before the session's first edit. | Catching every weakening. Changing an expected value (`== 81` to `== 90`), or a test that checks the wrong thing, still looks fine. The counts are pattern-based per language. |
+| If no agent's Stop hook is wired, or a wired agent has never called keelyard, status and doctor say so in yellow and never show a green "proven". | That an agent obeys the gate. Claude Code and Codex let the Stop hook block; OpenCode cannot veto "idle", so keelyard sends the missing items as a new prompt. After `max_blocks` reminders the gate lets the agent stop and records that. |
+| Parallel sessions and hooks write proof and timeline state under file locks; a torn write cannot produce a half bundle (atomic replace). | Consistency across machines or network file systems with broken locking. |
+
+## Rewind
+
+| keelyard guarantees | it does not guarantee |
+|---|---|
+| Every rewind first snapshots the current state, so it can be undone with the step number it prints. | Undoing anything outside the project folder. |
+| Files a snapshot cannot hold (gitignored, secrets, larger than `max_file_mb`) but that a rewind would overwrite or delete are copied to `.keelyard/backup/<time>/` first. | Undoing **databases, migrations that ran, deployed services, sent emails, pushed commits, or package installs**. A snapshot holds files only. Before a destructive command (`rm -rf`, `git reset --hard`, `DROP TABLE`, migrations) keelyard snapshots the files and warns; the database itself is not restored. |
+| An interrupted rewind (crash, Ctrl-C) leaves a journal. keelyard refuses to rewind again until `keelyard rewind recover` puts back the state from just before it. | Recovery if `.keelyard/` itself is deleted. |
+| Your own `.git` is never touched (separate shadow repository, own index). | |
+
+## Secrets
+
+- Never snapshotted by default: `.env`, `.env.*` (except `.env.example`/`.sample`/`.template`), `*.pem`, `*.key`,
+  `*.p12`, `*.pfx`, `*.jks`, `*.keystore`, `id_rsa*`/`id_ed25519*`/..., `.npmrc`, `.pypirc`, `.netrc`,
+  `.git-credentials`, `credentials.json`, `service-account*.json`, `*.tfstate`, `secrets/`. Change it with
+  `[rewind].include_secrets = true` or add patterns with `[rewind].exclude`.
+- Memory, proof bundles and reports pass text through a redactor (API keys, tokens, private keys, JWTs,
+  `PASSWORD=...` style assignments). It is pattern-based: an unusual secret format can slip through.
+- keelyard never sends anything anywhere. The only network calls are the ones you configure (swarm helper models).
+
+## Tokens
+
+- keelyard's own additions (brief, hints, footers) are budgeted. `keelyard run` returns the raw output when
+  filtering would not save more than its own footer costs.
+- Filters never drop an error or warning line: tested against real logs from pytest, cargo, go, node, eslint,
+  ruff, npm and git (`tests/corpus/`), also with thousands of lines of padding.
+- Six mechanisms, each with a safeguard (measured in [BENCHMARKS](BENCHMARKS.md), $0, no model):
+
+| mechanism | what it saves | the safeguard | limit |
+|---|---|---|---|
+| find code (`find_symbol`, `outline`, `related`, `code find/refs/related`) | reading whole files to locate one function | ranked results never cut silently; `related` lists imports, importers and tests; `refs=true` lists call sites | regex-based, not a type checker: dynamic dispatch and re-exports can be missed |
+| re-reads (`read_file`) | resending a file already in context | unchanged = short notice, changed = diff, `force=true` = full text; a notice is never sent when the file is smaller | relies on the agent still holding the earlier copy; reset on compaction |
+| log compaction (`keelyard run`, `run_compact`) | passing lines and banners | errors, warnings, stack frames, test counts and the exit code are kept (corpus test); the footer says how many lines were collapsed and `keelyard recall <id>` returns the raw output | pattern-based per tool; unknown tools get the generic compressor |
+| paged results (`find_symbol`, `memory_search`) | long result lists | best first, `remaining` and `next_offset` on every page; walking all pages returns everything | memory search counts at most 500 matches |
+| work state (`work_state`, `keelyard state`) | re-deriving decisions after a compaction | every decision needs a ref (`path:line`, `cmd: ...`, `#proof item`), validated when added and re-checked on every render; stale refs are marked STALE | it records what the agent writes down; it does not infer decisions |
+| tools per task (`[mcp].tools = "lazy"`) | tool schemas sent every request | `tool_search` finds every hidden tool, `tool_call` runs it; lazy falls back to `core` if it is not smaller | each on-demand use costs about 309 tokens; past about 4 distinct hidden tools a session is cheaper with `core`, so `core` is the default |
+
+- Every preset adds a ~12-token terse-output rule to CLAUDE.md/AGENTS.md ("Be terse: no preamble or recap. Keep
+  code exact."). Opt out: `keelyard init --no-terse` or `KEELYARD_TERSE=0`. On three local 0.5-1.8B models it used
+  2.6% fewer total tokens than the old "Be terse" line and kept more required facts (155/192 vs 142): not a
+  guarantee for other models or for every model (`BENCHMARKS.md`).
+- JSON output is compacted only losslessly (minified, same-key lists as columns/rows) and only when smaller.
+- A failing test run identical to an earlier failure on different code adds one ~40-token hint; nothing otherwise.
+- The lean preset saves tokens partly by **turning tools off** (9 OpenCode built-ins, keelyard's MCP list).
+- Benchmarks used a free model, so there is no cost claim. See [BENCHMARKS](BENCHMARKS.md) for the split
+  between cached and uncached input.
+
+## Per agent
+
+| capability | Claude Code | Codex | OpenCode |
+|---|---|---|---|
+| proof gate at the end of a turn | Stop hook blocks | Stop hook blocks (approve hooks once with `/hooks`) | cannot block "idle": missing items sent as a new prompt |
+| evidence from shell test runs | command-succeeded | command-succeeded | command-succeeded |
+| `proof test` / `proof_run_tests` | test-verified | test-verified | test-verified (MCP off in lean: use the CLI) |
+| snapshot after each edit | yes | yes | yes |
+| shell output filtered in place | yes (`updatedToolOutput`) | sent the same way; not yet confirmed in a real Codex session | yes (plugin rewrites the output) |
+| `[mcp].tools = "lazy"` (tool_search/tool_call) | yes | yes | only with MCP on |
+| work state in the brief after compaction | yes (SessionStart `compact`) | at session start; re-sent after compaction not confirmed | yes (plugin compaction hook) |
+| MCP tools | `.mcp.json` | `~/.codex/config.toml` or `--codex-project-mcp` | off by default (`KEELYARD_OPENCODE_MCP=1`) |
+| checked how | scripted hook payloads in CI (`keelyard selftest`) | scripted hook payloads in CI | real sessions, OpenCode 2.0.22 on Windows 11 |
+
+Real Claude Code and Codex sessions have not been benchmarked yet.
+
+
+---
+
+URL: https://akobirjontulqinovfuture.github.io/keelyard/guide/proof/
+
+# Proof gate
+
+Agents often say "done" when nothing was run, or when tests went green only because they were edited.
+The proof gate is a Stop hook. If the agent changed files in this session, it cannot finish until all of
+these are true:
+
+1. There is a requirement checklist (`proof_requirements`).
+2. Every item has evidence: a command and its result, or a `path:line` (`proof_check`).
+3. A test run after the last edit passed (`proof_run_tests` with `phase="after"`).
+4. If `[proof].app_url` is set, there is a screenshot taken since the last edit.
+
+When something is missing, the hook answers `{"decision": "block", "reason": ...}`. The reason lists what is
+missing, so the agent knows exactly what to do next. To stop loops, the gate gives up after `max_blocks`
+reminders (3 by default) and tells you. A turn that changed no files and wrote no checklist is never blocked.
+
+## The report
+
+Each session gets a self-contained HTML file in `.keelyard/proof/<session>/report.html`. It has no external
+requests and embeds its fonts, so you can attach it to a PR.
+
+![proof report](../img/proof-report.png)
+
+The timeline at the bottom interleaves snapshots, test runs and every gate decision.
+
+## From the CLI
+
+```bash
+keelyard proof add "SAVE10 takes 10% off" "unknown coupons raise ValueError"
+keelyard proof test before            # optional baseline
+keelyard proof test after
+keelyard proof check 1 "test_save10 passes"
+keelyard proof status                 # exit 0 when proven, 3 when not
+keelyard proof report --open
+```
+
+The test command comes from `[proof].test_cmd`. If that is not set, keelyard detects it from `package.json`,
+`Cargo.toml`, `go.mod` or Python test files. To use a different command for one run, pass
+`--cmd "npm test"`.
+
+## Limits
+
+The gate checks that evidence exists. It does not check that the evidence is true. An agent that is
+determined to lie can write a false sentence. The report exists so that a person can read the evidence
+in one minute.
+
+
+---
+
+URL: https://akobirjontulqinovfuture.github.io/keelyard/guide/rewind/
+
+# Rewind
+
+After every edit or shell command, keelyard snapshots the project into `.keelyard/shadow.git`. That is a
+separate git repository: your `.git`, index, stash and branches are never touched. Snapshots follow
+`.gitignore`. Files over `[rewind].max_file_mb` (20 MB by default) are skipped and listed as skipped. Nested
+repositories, such as monorepo packages that have their own `.git`, are included file by file.
+
+```bash
+keelyard rewind list         # -n 100 for more, -i for the timeline browser
+keelyard rewind show 12      # the diff step 12 made
+keelyard rewind to 9         # files back to how they were after step 9
+keelyard rewind fork 9 ../b  # copy step 9 into another folder and try a different approach there
+keelyard rewind snap         # snapshot now
+```
+
+![rewind](../img/cli-rewind.png)
+
+`rewind to` takes a snapshot of the current state first and prints its number. To undo the rewind,
+rewind to that number. Files that were created after the target step are removed. Files that were
+deleted are restored.
+
+## Timeline browser
+
+`keelyard rewind list -i` shows steps on the left and the diff of the selected step on the right. Press `r`
+to rewind to the selected step.
+
+![timeline](../img/timeline.png)
+
+![confirm](../img/timeline-confirm.png)
+
+## Cost
+
+On a 7,083-file Django checkout, a snapshot after an edit takes 88 ms (median). The first snapshot takes
+2.3 s, because it hashes every file. Concurrent hooks are serialised with a lock file, so two agents saving
+at the same moment cannot corrupt the timeline.
+
+
+---
+
+URL: https://akobirjontulqinovfuture.github.io/keelyard/guide/context/
+
+# Smaller context
+
+## Output filters
+
+`keelyard run <command>` runs a command and prints a shorter version of its output. Filters exist for
+`git status/log/diff`, pytest, cargo, go and jest tests, grep and rg, find and ls, and ruff, eslint and mypy.
+Every failure, error and `file:line` is kept; what is dropped is repetition and progress noise. The filtered
+output is never longer than the original.
+
+In Claude Code the same filters run on Bash results through `PostToolUse`. The command itself is not
+changed, only what the model reads. Each shortened output ends with an id, and `keelyard recall <id>`
+(or the MCP `recall` tool) returns the full text.
+
+```bash
+keelyard run pytest -q
+keelyard run -- git log --stat -n 50
+pytest -v 2>&1 | keelyard filter --for "pytest -v"
+```
+
+On 8 real commands, the filters cut 56,522 tokens to 5,901 and kept 100% of the facts we extracted
+([method](../BENCHMARKS.md)).
+
+## Deduplicated reads
+
+When the agent reads a file it has already read in this session, and the file has not changed, keelyard
+answers with a one-line notice instead of the file. If the file changed, the MCP `read_file` tool returns
+only the diff. When the agent's context is compacted, this memory is cleared so it can read again.
+
+## Structure first
+
+- `project_map`: files per directory, with approximate token sizes
+- `outline path`: classes and signatures with line numbers (Python is parsed properly; other languages use patterns)
+- `find_symbol name`: where something is defined
+
+```bash
+keelyard code map
+keelyard code outline src/cart.py
+keelyard code find Cart
+```
+
+
+---
+
+URL: https://akobirjontulqinovfuture.github.io/keelyard/guide/memory/
+
+# Memory and usage
+
+## Memory
+
+keelyard indexes the session logs that Claude Code (`~/.claude/projects`), Codex (`~/.codex/sessions`) and
+OpenCode (`~/.local/share/opencode/storage`) already keep on disk. The index is SQLite FTS5, stored in
+`~/.local/share/keelyard/memory.db` with mode 600. Secrets such as API keys, tokens and private keys are
+redacted before anything is stored.
+
+```bash
+keelyard memory index
+keelyard memory search "websocket reconnect"
+keelyard memory stats
+```
+
+The agent uses the `memory_search` tool, which indexes new sessions before every search and by default
+only searches sessions from the current project.
+
+## Usage
+
+`keelyard usage` reads the same logs and adds up input, output and cache tokens by day, model or agent.
+keelyard ships no prices. To get a cost column, add `[prices."model-name"]` to the config. Models without
+a price are marked rather than guessed.
+
+
+---
+
+URL: https://akobirjontulqinovfuture.github.io/keelyard/guide/brain/
+
+# Always on
+
+Tools only help if the agent remembers to use them. keelyard therefore puts a little of itself into the
+agent's context at the moments that matter, with a hard token budget each time.
+
+## What the agent sees, and when
+
+| moment | what keelyard adds | budget |
+|---|---|---|
+| session start | a **brief**: the rules (rewind, proof, cheap exploration, helpers), open proof items, a project map digest, and past-session notes that match the current task | `brief_tokens`, 600 by default |
+| after the context is compacted | the same brief again, marked "re-sent after compaction" | same |
+| each prompt you send | up to 4 snippets from earlier sessions **in this project** that match the prompt. Nothing at all if none match. | `recall_tokens`, 250 by default |
+| before reading a file again | if it is unchanged: "you already have it", plus its outline so the agent can find its place. If it changed: only the diff. | about 300 tokens of outline |
+| before a destructive command | `rm -rf`, `git reset --hard`, `git clean -f`, `git checkout .`, `git push --force`, `DROP`/`TRUNCATE`, `DELETE` without `WHERE`, and migrations (Django, Alembic, Prisma, Rails, Knex, Sequelize): keelyard **takes a snapshot first** and tells the agent which step restores the files. Files only: a dropped table, an applied migration or a deleted remote branch is not undone ([limits](../guarantees.md)) | one line |
+| before editing code with no test nearby | "no tests found for billing.py" (looks for `test_x.py`, `x_test.go`, `x.test.ts`, `tests/` and the like) | one line, once per file |
+| when the session gets large | if you set `plan_tokens`, a hint to hand bulk work to helpers once the session passes `budget_warn_at` of it | one line |
+
+keelyard never decides for you. A destructive command is not blocked; the snapshot just makes it undoable.
+
+## Never spammy
+
+Every hint has a cooldown per kind (`nudge_cooldown_s`, 5 minutes) and there is a cap per session
+(`max_nudges_per_session`, 12). The snapshot before a destructive command happens every time, even when the
+hint itself is rate-limited.
+
+```toml
+[brain]
+brief = true
+brief_tokens = 600
+recall = true
+recall_tokens = 250
+nudges = true
+nudge_cooldown_s = 300
+max_nudges_per_session = 12
+plan_tokens = 0          # e.g. 200000; 0 turns the budget hint off
+budget_warn_at = 0.6
+```
+
+Past-session recall reads keelyard's memory index. The Stop hook refreshes it at most every 10 minutes;
+`keelyard memory index` does it by hand.
+
+## Per agent
+
+| | Claude Code | Codex | OpenCode |
+|---|---|---|---|
+| brief at start | SessionStart `additionalContext` | SessionStart `additionalContext` | system prompt (`experimental.chat.system.transform`) |
+| brief after compaction | SessionStart with `source: compact` | **gap**: no post-compaction event | kept in the compaction summary (`experimental.session.compacting`) |
+| recall per prompt | UserPromptSubmit `additionalContext` | UserPromptSubmit `additionalContext` | queued, added to the next system prompt (`chat.message`) |
+| repeat read → outline/diff | PreToolUse deny with reason | **gap**: Codex has no read tool hook | tool error with the same text |
+| snapshot before destructive | PreToolUse on Bash | PreToolUse on shell | `tool.execute.before` |
+| hints | PreToolUse `additionalContext` + a visible `systemMessage` for destructive commands | same JSON; whether Codex shows PreToolUse context is **not verified** | queued, added to the next system prompt |
+| budget hint | from `transcript_path` size | same | **gap**: no transcript path; set nothing, it stays off |
+
+The Claude Code column is covered by the test suite at the hook level. The Codex and OpenCode columns follow
+their documented hook and plugin APIs. The OpenCode plugin is one file that supports both plugin APIs
+(`@opencode/plugin` 2.x `setup(ctx)` and `@opencode-ai/plugin` 1.x `server()`); a test drives both with a fake
+keelyard. Results from real sessions are in [Benchmarks](../BENCHMARKS.md) once measured.
+
+
+---
+
+URL: https://akobirjontulqinovfuture.github.io/keelyard/guide/presets/
+
+# Presets: lowest-token settings
+
+```bash
+keelyard init --preset lean          # fewest tokens
+keelyard init --preset balanced      # default
+keelyard init --preset max-quality   # every keelyard tool over MCP
+keelyard uninstall opencode          # reverts the preset too (only what keelyard added)
+```
+
+| | lean | balanced | max-quality |
+|---|---|---|---|
+| Proof | tests run by keelyard after each edit, plus the agent's shell runs | from the agent's shell test runs | MCP proof tools + shell runs |
+| Brief | file map, small project files (≤1,500 tokens), pre-edit test result | file map | rules + file map |
+| Shell output filter | on | on | on |
+| OpenCode | `agents.build` override: 1-paragraph system prompt; webfetch, websearch, subagent, skill, question, todowrite, execute (code mode), glob, grep denied; no MCP catalog | no MCP catalog | MCP server added |
+| Claude Code | `.claude/settings.json` env: `BASH_MAX_OUTPUT_LENGTH=12000`, `MAX_MCP_OUTPUT_TOKENS=8000`, `DISABLE_NON_ESSENTIAL_MODEL_CALLS=1` (your values win) | hooks + MCP | hooks + MCP |
+| Codex | short rules block | hooks | hooks |
+| Rules block | 3 lines | 3 lines (OpenCode) / full | full |
+
+keelyard records exactly what it added in `.keelyard/preset.json`; uninstall removes only those keys, and only if
+you did not change them. If `opencode.json` already defines `agents.build`, lean leaves it alone.
+
+Trade-offs of lean: the agent has no web access, no subagents and no glob/grep tools (it uses the shell and the
+file map in keelyard's brief instead). For Codex, the cheapest effective setting is in your user config, which
+keelyard does not touch: `model_reasoning_effort = "low"` for routine fixes.
+
+Measured effect: see [BENCHMARKS](../BENCHMARKS.md#presets-measured-on-opencode-2).
+
+
+---
+
+URL: https://akobirjontulqinovfuture.github.io/keelyard/guide/swarm/
+
+# Swarm
+
+Some work is wide rather than deep: answering "where is X handled" across a package, or drafting the same
+small fix in five files. `swarm` sends tasks like these to a cheaper model in parallel, and never trusts
+an answer it has not checked.
+
+## Plan
+
+`swarm_plan(goal)` (or `keelyard swarm plan "goal"`) splits a goal into one task per relevant file. It finds
+the files that define the functions or classes the goal names, and gives each task a **context pack**: only
+those definitions plus the file's imports, with real line numbers. No model call is involved.
+
+```console
+$ keelyard swarm plan "fix total() so SAVE10 takes 10% off" --json
+{"tasks": [{"kind": "draft_edit", "files": ["cart.py"], "symbols": ["total"], ...}]}
+```
+
+## Run and check
+
+For each task keelyard:
+
+1. asks the helper model for a structured answer. Questions use a JSON schema (`answer`, `citations`,
+   `quotes`). A fix to one definition asks for the new definition only, and keelyard builds the diff itself,
+   because small models write correct code far more often than correct diffs.
+2. checks it. Citations must point at real lines, and quoted code must exist. Patches must apply, then the
+   tests run on a **throwaway copy** of the project. If the suite was already failing, a patch passes when it
+   fixes at least one failing test and breaks none.
+3. samples `best_of` answers (2 by default) and keeps a checked one. For questions it prefers the answer whose
+   citations the others agree with; for patches, the smallest one that passes.
+4. if none pass, retries `retries` times (1 by default) with the checker's notes, such as the failing test
+   output, added to the prompt.
+5. if it still fails, tries once with `escalate_model` (`[models.strong]`) when that is configured.
+
+Nothing is applied to your files. The agent gets the checked patch and decides.
+
+## Your agent's own subagents
+
+With no helper model configured, `swarm` returns `subagent_tasks`: one ready prompt per task, with the context
+pack and the required output format. Hand them to the Claude Code Task tool or OpenCode subagents, then check
+what comes back with `swarm_verify`. `keelyard swarm plan "goal" --subagents` prints the same prompts.
+
+## Cooperative mode (default)
+
+`swarm` runs as a team, not as separate calls:
+
+- **Planner → workers → verifier.** `swarm_plan` (or `keelyard swarm plan`) splits the goal. Workers draft,
+  and keelyard checks every draft (citations exist, the patch applies and passes the tests in a copy).
+- **Blackboard.** What one worker got verified, and what was tried and rejected, goes into the prompt of the
+  next worker on the same files, capped at 1,200 characters.
+- **Critic.** Each candidate that passes the checks is reviewed by a second call (`APPROVE` or
+  `REJECT: reason`). A rejection sends the task back with the reason. Off by default (`critic = true` turns it on): with a
+  1.5B model it doubled the tokens and caught nothing the tests didn't (see below).
+- **Voting.** Among accepted candidates, the one most others agree with wins (same changed lines, or the
+  same cited lines).
+- **Cheapest capable model.** Tasks start on the first model in `ladder` and move up only when the checks
+  fail. When a model keeps failing a kind of task (fewer than 1 in 3 after 3 tries), later tasks of that
+  kind start one step higher.
+- **Hard token budget.** Every call reserves its worst case (prompt characters / 3 plus `max_tokens`) before
+  it is sent. A call that would cross `budget_tokens` or `task_budget_tokens` is refused, and the task
+  reports `stopped: ... budget ... reached`. Results include `tokens`, `tokens_by_model` and
+  `tokens_per_verified`.
+- **Many workers.** `workers` sets how many tasks run at once. The tests run 250 tasks with more than 200
+  calls in flight, and the token total matches exactly.
+
+`keelyard swarm run tasks.json --basic`, or `cooperative = false`, gives the plain swarm.
+
+## Configure
+
+```toml
+[models.cheap]
+provider = "openai"            # any OpenAI-compatible endpoint, e.g. Ollama or vLLM
+base_url = "http://localhost:11434/v1"
+model = "qwen2.5-coder:7b"
+
+[swarm]
+best_of = 2
+retries = 1
+escalate_model = "strong"      # "" turns escalation off
+test_patches = true
+cooperative = true
+ladder = ["cheap", "strong"]   # cheapest first; [] = helper_model then escalate_model
+workers = 64
+critic = false
+budget_tokens = 200000         # hard cap per swarm call, 0 = none
+task_budget_tokens = 20000
+```
+
+## Measured
+
+On 5 small bug fixes with a 1.5B local model, the old single-shot swarm got 0 right and marked 2-3 wrong
+patches as verified. The new pipeline got 4 of 5 right in both runs and marked no wrong patch verified, using
+about half the input tokens. For questions, "verified" only means the cited lines exist: 5 were verified, 2-3
+were right. Details: [Benchmarks](../BENCHMARKS.md#swarm-quality).
+
+Cooperative mode, 2 runs × 10 tasks: pipeline 15/20 at 1,272 tokens per correct, best-local 18/20 at 1,560 tokens per correct, coop-nocritic 15/20 at 1,312 tokens per correct, coop 15/20 at 2,943 tokens per correct.
+
+
+---
+
+URL: https://akobirjontulqinovfuture.github.io/keelyard/guide/arena/
+
+# Arena
+
+The arena runs the same task across several agents and models. Each run gets a fresh copy of the
+repository, and the task's check command decides pass or fail. Tokens and cost come from each agent's own
+machine-readable output. If an agent reports nothing, the cell says `n/a`. Nothing is estimated.
+
+```bash
+keelyard arena run examples/arena/discount/task.toml --out arena-results
+keelyard arena render arena-results       # re-render from results.json
+```
+
+`task.local.toml` runs without any agent CLI or API key. It uses a local model through Ollama and two
+baselines: "do nothing" and the reference fix.
+
+![arena report](../img/arena-report.png)
+
+The report above is a real run: the 1.5B one-shot contender passed 0 of 5. We have not run
+Claude Code, Codex or OpenCode through the arena on this machine yet. When we do, the results go in
+[Benchmarks](../BENCHMARKS.md).
+
+Agent CLI flags change between releases. Check the `cmd` lines in `task.toml` against the versions you
+have installed.
+
+
+---
+
+URL: https://akobirjontulqinovfuture.github.io/keelyard/guide/agents/
+
+# For agents
+
+keelyard is meant to be driven by agents. Everything a person can do from the CLI, an agent can do through
+MCP, and both return JSON.
+
+## What `init` installs
+
+| agent | hooks | MCP | instructions |
+|---|---|---|---|
+| Claude Code | `.claude/settings.json` | `.mcp.json` | `CLAUDE.md` section, `.claude/skills/keelyard/SKILL.md`, `/keelyard:status`, `/keelyard:prove`, `/keelyard:undo` |
+| Codex | `.codex/hooks.json` | snippet for `~/.codex/config.toml`, or `.codex/config.toml` with `--codex-project-mcp` | `AGENTS.md` section |
+| OpenCode | `.opencode/plugins/keelyard.js` | `opencode.json` | `AGENTS.md` section |
+
+The instruction sections sit between `<!-- keelyard:start -->` and `<!-- keelyard:end -->`. `init` replaces only
+that block, and `uninstall` removes only that block. The rest of the file stays as you wrote it.
+
+## The loop an agent follows
+
+1. `proof_requirements(items=[...])`
+2. `project_map`, `find_symbol`, `outline`, then `read_file`
+3. edit (snapshots happen automatically)
+4. `run_compact` for tests and builds
+5. `proof_run_tests(phase="after")`, then `proof_check` for each item
+6. `proof_status` → `{"proven": true}`
+
+All 20 tools are listed, with their schemas, in the [MCP reference](../mcp.md).
+
+## Self-test
+
+`keelyard selftest` plays the agent. It sends the same hook JSON Claude Code sends and does everything else
+through the MCP server over stdio. In a temporary project it records requirements, reads code, searches
+memory, runs a swarm task against a local stub model, makes a bad edit, gets blocked by the gate, rewinds,
+fixes the bug, proves it and is let through. It needs no network and no API key.
+
+![selftest](../img/cli-selftest.png)
+
+### Codex: checked version
+
+Checked against **Codex CLI 0.165.0** (Oct 28, 2026) with `scripts/codex_e2e.py`, which runs the real Codex binary
+against a local scripted model (no API key) and runs in CI on every push and weekly. All five hooks fire, the proof
+gate blocks a "done" with red tests and opens after a passing shell test run, MCP tools and the AGENTS.md block reach
+the model, and rewind restores an edit. Codex sends shell results to `PostToolUse` as a plain string with no exit
+code; keelyard reads the test result from the output. See [Codex in 2 minutes](../codex.md).
+
+### Codex MCP: project or user level
+
+Codex reads MCP servers from `~/.codex/config.toml`, and from a project's `.codex/config.toml` only when you
+trust the project. keelyard never writes either without asking:
+
+- `keelyard init --codex-project-mcp` (or `keelyard install codex --codex-project-mcp`) adds the server to this
+  project's `.codex/config.toml`, between `# keelyard:start` / `# keelyard:end`. Trust the project in Codex once.
+- `keelyard install codex --global` adds it to `~/.codex/config.toml` for every project.
+
+`keelyard doctor` warns if Codex hooks are wired but neither file has the server. `keelyard uninstall codex`
+removes the block and deletes the file if nothing else was in it.
+
+
+---
+
+URL: https://akobirjontulqinovfuture.github.io/keelyard/cli/
+
+# CLI reference
+
+Generated from `keelyard --help` by `docs/demo/gen_reference.py`.
+
+Every command accepts `--json` and prints exactly one JSON object with `ok` and `exit` keys.
+
+```text
+usage: keelyard <command> [options]
+
+keelyard makes coding agents prove their work, lets you undo any step,
+and keeps their context small. Works with Claude Code, Codex and OpenCode.
+
+start here:
+  init              set up this project and wire every agent it finds
+  doctor            check that everything is installed and wired correctly
+  status            what keelyard knows about this project right now
+
+everyday:
+  rewind            list, inspect and undo agent steps
+  proof             the evidence an agent collected before saying "done"
+  run               run a command and print a compact version of its output
+  code              outline a file, map the project, find a symbol
+  memory            search past sessions across all your agents
+  usage             tokens and cost from your local agent logs
+
+more:
+  swarm             fan small, checkable tasks out to a cheap model
+  arena             run one task across agents and models, compare results
+  bench             measure savings on your own machine
+  selftest          a scripted agent completes a full task through the agent interface
+  install/uninstall wire or unwire one agent by hand
+  filter            compact output piped on stdin
+  recall            print the full output that `run` shortened
+
+options:
+  -h, --help   show this help message and exit
+  --version    show program's version number and exit
+
+commands:
+  <command>
+    init       set up this project and wire the agents found on this machine
+    doctor     check the installation and wiring; exits 3 if something is broken
+    status     show what keelyard knows about this project
+    selftest   a scripted agent runs a full task through MCP and hooks in a temp folder
+    install    wire one agent in this project
+    uninstall  unwire one agent in this project
+    rewind     list, inspect and undo agent steps
+    proof      the evidence an agent collected before saying done
+    run        run a command and print a compact version of its output
+    filter     compact output piped on stdin
+    recall     print the full output that `run` shortened
+    code       outline a file, map the project, find a symbol
+    memory     search past sessions across all your agents
+    state      compact work state: requirements, decisions, changes, open questions
+    usage      tokens and cost from your local agent logs
+    swarm      fan small, checkable tasks out to a cheap model
+    arena      run one task across agents and models, compare results
+    bench      measure savings on your own machine
+
+exit codes:
+  0  success
+  1  error (the message says what went wrong and how to fix it)
+  2  usage error (bad command or arguments)
+  3  a check did not pass (doctor found a problem, proof not complete, tests failed, selftest failed)
+  `keelyard run` exits with the code of the command it ran.
+
+Run `keelyard <command> --help` for examples. Every command accepts --json.
+```
+
+## init
+
+```text
+usage: keelyard init [-h] [--json] [--agent {claude,codex,opencode}] [--no-agents] [--dry-run]
+                     [--preset {lean,balanced,max-quality}] [--codex-project-mcp] [--no-terse]
+                     [--global]
+
+set up this project and wire the agents found on this machine
+
+options:
+  -h, --help            show this help message and exit
+  --json                print one JSON object on stdout (for scripts and agents)
+  --agent {claude,codex,opencode}
+                        wire only this agent (repeatable)
+  --no-agents           create the config but wire no agent
+  --dry-run             print what would change and stop
+  --preset {lean,balanced,max-quality}
+                        lean = fewest tokens (trimmed agent prompt/tools, capped output); balanced
+                        = default; max-quality = every keelyard tool over MCP. `keelyard uninstall
+                        <agent>` reverts it
+  --codex-project-mcp   Codex: register the keelyard MCP server in this project's
+                        .codex/config.toml instead of asking you to edit ~/.codex/config.toml
+                        (Codex reads it only for trusted projects)
+  --no-terse            leave out the terse-output rule (results only, no filler) from
+                        CLAUDE.md/AGENTS.md
+  --global              wire the agents for every project of this user (~/.claude, ~/.codex,
+                        ~/.config/opencode); projects set themselves up on their first session
+
+examples:
+  keelyard init                    # detect agents, wire them, take a first snapshot
+  keelyard init --agent claude     # only Claude Code
+  keelyard init --dry-run          # show what would change
+```
+
+## doctor
+
+```text
+usage: keelyard doctor [-h] [--json]
+
+check the installation and wiring; exits 3 if something is broken
+
+options:
+  -h, --help  show this help message and exit
+  --json      print one JSON object on stdout (for scripts and agents)
+
+examples:
+  keelyard doctor
+  keelyard doctor --json
+```
+
+## status
+
+```text
+usage: keelyard status [-h] [--json]
+
+show what keelyard knows about this project
+
+options:
+  -h, --help  show this help message and exit
+  --json      print one JSON object on stdout (for scripts and agents)
+
+examples:
+  keelyard status
+  keelyard status --json
+```
+
+## selftest
+
+```text
+usage: keelyard selftest [-h] [--json] [--keep]
+
+a scripted agent runs a full task through MCP and hooks in a temp folder
+
+options:
+  -h, --help  show this help message and exit
+  --json      print one JSON object on stdout (for scripts and agents)
+  --keep      keep the temporary project
+
+examples:
+  keelyard selftest
+  keelyard selftest --keep   # keep the temp project to inspect
+```
+
+## rewind
+
+```text
+usage: keelyard rewind [-h] [--json] <action> ...
+
+list, inspect and undo agent steps
+
+options:
+  -h, --help  show this help message and exit
+  --json      print one JSON object on stdout (for scripts and agents)
+
+actions:
+  <action>
+    list      list snapshots
+    show      show the diff a step made
+    to        restore files to a step (undoable)
+    fork      copy a step into a new folder
+    snap      take a snapshot now
+    recover   finish a rewind that was interrupted (puts back the state from just before it)
+
+examples:
+  keelyard rewind                  # every step agents took, newest last
+  keelyard rewind list -i          # browse steps and diffs full-screen
+  keelyard rewind show 12          # the diff that step 12 made
+  keelyard rewind to 9             # put the files back as they were after step 9
+  keelyard rewind fork 9 ../try-b  # copy step 9 into another folder
+  keelyard rewind snap             # take a snapshot by hand
+```
+
+### rewind list
+
+```text
+usage: keelyard rewind list [-h] [--json] [-i] [-n N]
+
+list snapshots
+
+options:
+  -h, --help         show this help message and exit
+  --json             print one JSON object on stdout (for scripts and agents)
+  -i, --interactive  open the timeline browser
+  -n N               show the last N steps (default 30)
+```
+
+### rewind show
+
+```text
+usage: keelyard rewind show [-h] [--json] step
+
+show the diff a step made
+
+positional arguments:
+  step
+
+options:
+  -h, --help  show this help message and exit
+  --json      print one JSON object on stdout (for scripts and agents)
+```
+
+### rewind to
+
+```text
+usage: keelyard rewind to [-h] [--json] step
+
+restore files to a step (undoable)
+
+positional arguments:
+  step
+
+options:
+  -h, --help  show this help message and exit
+  --json      print one JSON object on stdout (for scripts and agents)
+```
+
+### rewind fork
+
+```text
+usage: keelyard rewind fork [-h] [--json] step dest
+
+copy a step into a new folder
+
+positional arguments:
+  step
+  dest
+
+options:
+  -h, --help  show this help message and exit
+  --json      print one JSON object on stdout (for scripts and agents)
+```
+
+### rewind snap
+
+```text
+usage: keelyard rewind snap [-h] [--json]
+
+take a snapshot now
+
+options:
+  -h, --help  show this help message and exit
+  --json      print one JSON object on stdout (for scripts and agents)
+```
+
+## proof
+
+```text
+usage: keelyard proof [-h] [--json] <action> ...
+
+the evidence an agent collected before saying done
+
+options:
+  -h, --help      show this help message and exit
+  --json          print one JSON object on stdout (for scripts and agents)
+
+actions:
+  <action>
+    status        what is proven and what is missing
+    add           add requirements
+    check         mark a requirement met, with evidence
+    test          run the test command and record the result
+    shot          screenshot the app
+    accept-tests  acknowledge changed tests (a real refactor); shown as agent-claimed
+    reset         start this session's proof over (e.g. after a failed signature check)
+    report        write the HTML report
+
+examples:
+  keelyard proof status
+  keelyard proof add "discount applies once" "empty cart costs 0"
+  keelyard proof check 1 "test_discount_once passes"
+  keelyard proof test after
+  keelyard proof report            # writes an HTML report
+```
+
+### proof status
+
+```text
+usage: keelyard proof status [-h] [--json]
+
+what is proven and what is missing
+
+options:
+  -h, --help  show this help message and exit
+  --json      print one JSON object on stdout (for scripts and agents)
+```
+
+### proof add
+
+```text
+usage: keelyard proof add [-h] [--json] items [items ...]
+
+add requirements
+
+positional arguments:
+  items
+
+options:
+  -h, --help  show this help message and exit
+  --json      print one JSON object on stdout (for scripts and agents)
+```
+
+### proof check
+
+```text
+usage: keelyard proof check [-h] [--json] id evidence
+
+mark a requirement met, with evidence
+
+positional arguments:
+  id
+  evidence
+
+options:
+  -h, --help  show this help message and exit
+  --json      print one JSON object on stdout (for scripts and agents)
+```
+
+### proof test
+
+```text
+usage: keelyard proof test [-h] [--json] [--cmd TEST_CMD] {before,after}
+
+run the test command and record the result
+
+positional arguments:
+  {before,after}
+
+options:
+  -h, --help      show this help message and exit
+  --json          print one JSON object on stdout (for scripts and agents)
+  --cmd TEST_CMD  override [proof].test_cmd
+```
+
+### proof shot
+
+```text
+usage: keelyard proof shot [-h] [--json] [url]
+
+screenshot the app
+
+positional arguments:
+  url
+
+options:
+  -h, --help  show this help message and exit
+  --json      print one JSON object on stdout (for scripts and agents)
+```
+
+### proof report
+
+```text
+usage: keelyard proof report [-h] [--json] [--open]
+
+write the HTML report
+
+options:
+  -h, --help  show this help message and exit
+  --json      print one JSON object on stdout (for scripts and agents)
+  --open      open it in the browser
+```
+
+## run
+
+```text
+usage: keelyard run [-h] [--json] ...
+
+run a command and print a compact version of its output
+
+positional arguments:
+  command
+
+options:
+  -h, --help  show this help message and exit
+  --json      print one JSON object on stdout (for scripts and agents)
+
+examples:
+  keelyard run pytest -q
+  keelyard run git log --stat
+  keelyard run -- ruff check .     # use -- if the command has its own flags first
+```
+
+## filter
+
+```text
+usage: keelyard filter [-h] [--json] [--for FOR_CMD]
+
+compact output piped on stdin
+
+options:
+  -h, --help     show this help message and exit
+  --json         print one JSON object on stdout (for scripts and agents)
+  --for FOR_CMD  the command that produced the output (picks the rules)
+
+examples:
+  pytest -q 2>&1 | keelyard filter --for 'pytest -q'
+```
+
+## recall
+
+```text
+usage: keelyard recall [-h] [--json] id
+
+print the full output that `run` shortened
+
+positional arguments:
+  id
+
+options:
+  -h, --help  show this help message and exit
+  --json      print one JSON object on stdout (for scripts and agents)
+
+examples:
+  keelyard recall 3f9a1c2b7d4e
+```
+
+## code
+
+```text
+usage: keelyard code [-h] [--json] <action> ...
+
+outline a file, map the project, find a symbol
+
+options:
+  -h, --help  show this help message and exit
+  --json      print one JSON object on stdout (for scripts and agents)
+
+actions:
+  <action>
+    outline   signatures only
+    map       compact project map
+    find      where a symbol is defined (best first, paged)
+    related   what a file imports, who imports it, and its tests
+
+examples:
+  keelyard code outline src/app.py
+  keelyard code map
+  keelyard code find Cart
+```
+
+### code outline
+
+```text
+usage: keelyard code outline [-h] [--json] path
+
+signatures only
+
+positional arguments:
+  path
+
+options:
+  -h, --help  show this help message and exit
+  --json      print one JSON object on stdout (for scripts and agents)
+```
+
+### code map
+
+```text
+usage: keelyard code map [-h] [--json]
+
+compact project map
+
+options:
+  -h, --help  show this help message and exit
+  --json      print one JSON object on stdout (for scripts and agents)
+```
+
+### code find
+
+```text
+usage: keelyard code find [-h] [--json] [--refs] [--offset OFFSET] [--limit LIMIT] name
+
+where a symbol is defined (best first, paged)
+
+positional arguments:
+  name
+
+options:
+  -h, --help       show this help message and exit
+  --json           print one JSON object on stdout (for scripts and agents)
+  --refs           also list call sites and uses
+  --offset OFFSET  skip this many results (next page)
+  --limit LIMIT    results per page (default 20)
+```
+
+## memory
+
+```text
+usage: keelyard memory [-h] [--json] <action> ...
+
+search past sessions across all your agents
+
+options:
+  -h, --help  show this help message and exit
+  --json      print one JSON object on stdout (for scripts and agents)
+
+actions:
+  <action>
+    index     read new sessions from Claude Code, Codex and OpenCode
+    stats     what is indexed
+    search    full-text search
+
+examples:
+  keelyard memory index            # read new sessions from all agents
+  keelyard memory search "rate limit retry"
+  keelyard memory stats
+```
+
+### memory index
+
+```text
+usage: keelyard memory index [-h] [--json]
+
+read new sessions from Claude Code, Codex and OpenCode
+
+options:
+  -h, --help  show this help message and exit
+  --json      print one JSON object on stdout (for scripts and agents)
+```
+
+### memory search
+
+```text
+usage: keelyard memory search [-h] [--json] [--project PROJECT] [--budget BUDGET]
+                              [--offset OFFSET]
+                              query
+
+full-text search
+
+positional arguments:
+  query
+
+options:
+  -h, --help         show this help message and exit
+  --json             print one JSON object on stdout (for scripts and agents)
+  --project PROJECT
+  --budget BUDGET    max characters returned (default 2400)
+  --offset OFFSET    skip this many hits (next page)
+```
+
+### memory stats
+
+```text
+usage: keelyard memory stats [-h] [--json]
+
+what is indexed
+
+options:
+  -h, --help  show this help message and exit
+  --json      print one JSON object on stdout (for scripts and agents)
+```
+
+## usage
+
+```text
+usage: keelyard usage [-h] [--json] [--by {day,model,agent}]
+
+tokens and cost from your local agent logs
+
+options:
+  -h, --help            show this help message and exit
+  --json                print one JSON object on stdout (for scripts and agents)
+  --by {day,model,agent}
+
+examples:
+  keelyard usage
+  keelyard usage --by model
+```
+
+## swarm
+
+```text
+usage: keelyard swarm [-h] [--json] <action> ...
+
+fan small, checkable tasks out to a cheap model
+
+options:
+  -h, --help  show this help message and exit
+  --json      print one JSON object on stdout (for scripts and agents)
+
+actions:
+  <action>
+    run       run tasks from a JSON file
+    plan      split a goal into focused helper tasks (no model call)
+
+examples:
+  keelyard swarm plan "fix total() for SAVE10" --json > tasks.json
+  keelyard swarm run tasks.json   # [{"kind": "ask", "prompt": "...", "files": ["a.py"], "symbols": ["total"]}]
+  keelyard swarm plan "where is auth checked" --subagents
+```
+
+### swarm run
+
+```text
+usage: keelyard swarm run [-h] [--json] [--model MODEL] [--best-of BEST_OF] [--retries RETRIES]
+                          [--basic]
+                          tasks
+
+run tasks from a JSON file
+
+positional arguments:
+  tasks
+
+options:
+  -h, --help         show this help message and exit
+  --json             print one JSON object on stdout (for scripts and agents)
+  --model MODEL      a [models.<key>] from the config (default: [swarm].helper_model)
+  --best-of BEST_OF  samples per task (default: [swarm].best_of)
+  --retries RETRIES  retries with checker feedback (default: [swarm].retries)
+  --basic            no blackboard, critic, routing or budget (the plain swarm)
+```
+
+## arena
+
+```text
+usage: keelyard arena [-h] [--json] <action> ...
+
+run one task across agents and models, compare results
+
+options:
+  -h, --help  show this help message and exit
+  --json      print one JSON object on stdout (for scripts and agents)
+
+actions:
+  <action>
+    run       run a task spec
+    render    re-render the report from results.json
+
+examples:
+  keelyard arena run examples/arena/discount/task.toml
+  keelyard arena render arena-results
+```
+
+### arena run
+
+```text
+usage: keelyard arena run [-h] [--json] [--out OUT] [--only [NAME ...]] spec
+
+run a task spec
+
+positional arguments:
+  spec
+
+options:
+  -h, --help         show this help message and exit
+  --json             print one JSON object on stdout (for scripts and agents)
+  --out OUT
+  --only [NAME ...]  only these contenders
+```
+
+### arena render
+
+```text
+usage: keelyard arena render [-h] [--json] out
+
+re-render the report from results.json
+
+positional arguments:
+  out
+
+options:
+  -h, --help  show this help message and exit
+  --json      print one JSON object on stdout (for scripts and agents)
+```
+
+## bench
+
+```text
+usage: keelyard bench [-h] [--json]
+
+measure savings on your own machine
+
+options:
+  -h, --help  show this help message and exit
+  --json      print one JSON object on stdout (for scripts and agents)
+
+examples:
+  keelyard bench
+  keelyard bench --json
+```
+
+## install
+
+```text
+usage: keelyard install [-h] [--json] [--global] [--no-terse] [--codex-project-mcp]
+                        [{claude,codex,opencode}]
+
+wire one agent in this project
+
+positional arguments:
+  {claude,codex,opencode}
+
+options:
+  -h, --help            show this help message and exit
+  --json                print one JSON object on stdout (for scripts and agents)
+  --global              wire at user level (all agents if none named)
+  --no-terse            leave out the terse-output rule
+  --codex-project-mcp   Codex: register the keelyard MCP server in this project's
+                        .codex/config.toml instead of asking you to edit ~/.codex/config.toml
+                        (Codex reads it only for trusted projects)
+
+examples:
+  keelyard install claude
+  keelyard install --global
+```
+
+## uninstall
+
+```text
+usage: keelyard uninstall [-h] [--json] [--global] [{claude,codex,opencode}]
+
+unwire one agent in this project
+
+positional arguments:
+  {claude,codex,opencode}
+
+options:
+  -h, --help            show this help message and exit
+  --json                print one JSON object on stdout (for scripts and agents)
+  --global              unwire at user level (all agents if none named)
+
+examples:
+  keelyard uninstall claude
+  keelyard uninstall --global
+```
+
+
+---
+
+URL: https://akobirjontulqinovfuture.github.io/keelyard/mcp/
+
+# MCP reference
+
+Generated from the running server by `docs/demo/gen_reference.py`.
+
+The server is `keelyard mcp` (stdio). It sends these instructions to the agent on connect:
+
+```text
+keelyard: proof, rewind, smaller context. For a change: proof_requirements -> find_symbol,
+read_file(ranges) -> edit (auto-snapshotted; rewind_to undoes) -> run_compact -> proof_run_tests(phase="after")
+-> proof_check each item -> proof_status proven. Step-by-step guides: workflow("plan"|"debug"|"review").
+```
+
+Every tool returns a JSON object (MCP structured content). Errors are MCP tool errors whose text says what went wrong and, where there is one, a `Hint:` with the fix.
+
+These are the default (`core`) tools. `[mcp].tools = "all"` adds the rest; `"lazy"` sends only `read_file`, `run_compact`, `find_symbol` and `proof_status` plus `tool_search` (find a hidden tool and its schema) and `tool_call` (run it), and falls back to `core` if that would not be smaller.
+
+| tool | read-only | destructive | summary |
+|---|---|---|---|
+| [`proof_requirements`](#proof_requirements) |  |  | Record what the user asked for as a checklist. Call this first. Duplicate items are ignored. |
+| [`proof_check`](#proof_check) |  |  | Mark one requirement as verified, with concrete evidence (a command and its result, or file:line). |
+| [`proof_run_tests`](#proof_run_tests) |  |  | Run the project's tests and record the result as evidence. |
+| [`proof_status`](#proof_status) | yes |  | Is the work proven? Returns {"proven", "missing": [what to do next], "requirements", "report"}. |
+| [`rewind_list`](#rewind_list) | yes |  | List recent workspace snapshots, oldest first. One is taken after every edit or shell command. |
+| [`rewind_to`](#rewind_to) |  | yes | Restore project files to how they were after `step`. A safety snapshot is taken first, |
+| [`read_file`](#read_file) | yes |  | Read a project file. A repeat read of an unchanged file returns a one-line notice instead of the |
+| [`run_compact`](#run_compact) |  |  | Run a command and return output with failures, errors and file:line kept and noise dropped. |
+| [`recall`](#recall) | yes |  | Return the full raw output that run_compact or the shell-output filter shortened. |
+| [`find_symbol`](#find_symbol) | yes |  | Where is a symbol defined (best match first), and with refs=true where it is used. |
+| [`swarm`](#swarm) |  |  | Run small tasks on the configured helper model in parallel. Each answer is checked: citations (path:line) |
+| [`memory_search`](#memory_search) | yes |  | Search past Claude Code, Codex and OpenCode sessions, best match first. New sessions are indexed first. |
+| [`work_state`](#work_state) |  |  | Compact state that survives compaction: requirements, decisions, changed files, open questions. |
+| [`workflow`](#workflow) | yes |  | A short step-by-step guide: plan (plan-implement-verify), debug (loop), review (diff checklist). |
+
+## proof_requirements
+
+Record what the user asked for as a checklist. Call this first. Duplicate items are ignored.
+
+Returns {"requirements": [{"id", "text", "done", "evidence"}]}.
+
+| parameter | type | default | description |
+|---|---|---|---|
+| `items` | array | required | One short, checkable item per user ask, e.g. ["discount applies once", "empty cart costs 0"]. |
+
+## proof_check
+
+Mark one requirement as verified, with concrete evidence (a command and its result, or file:line).
+
+Returns the updated requirement.
+
+| parameter | type | default | description |
+|---|---|---|---|
+| `requirement_id` | integer | required | The id from proof_requirements, e.g. 1. |
+| `evidence` | string | required | What you ran or saw, e.g. "pytest tests/test_cart.py::test_once passed" or "cart.py:14 caps at one use". |
+
+## proof_run_tests
+
+Run the project's tests and record the result as evidence.
+
+Returns {"exit", "passed", "seconds", "cmd", "output"} where output is a compact tail.
+
+| parameter | type | default | description |
+|---|---|---|---|
+| `phase` | "before" / "after" | "after" | "before" your change (baseline) or "after" it (required by the gate). |
+| `command` | string | "" | Optional override, e.g. "pytest -q tests/test_cart.py". Default: [proof].test_cmd or auto-detected. |
+
+## proof_status
+
+Is the work proven? Returns {"proven", "missing": [what to do next], "requirements", "report"}.
+
+No parameters.
+
+## rewind_list
+
+List recent workspace snapshots, oldest first. One is taken after every edit or shell command.
+
+Returns {"steps": [{"step", "tool", "ts", "files", "n_files"}], "total"}.
+
+| parameter | type | default | description |
+|---|---|---|---|
+| `last` | integer | 20 | How many recent steps, e.g. 20. |
+
+## rewind_to
+
+Restore project files to how they were after `step`. A safety snapshot is taken first,
+so calling rewind_to(safety_step) undoes this. Returns {"restored", "removed", "safety_step", "new_step"}.
+
+| parameter | type | default | description |
+|---|---|---|---|
+| `step` | integer | required | A step number from rewind_list, e.g. 3. |
+
+## read_file
+
+Read a project file. A repeat read of an unchanged file returns a one-line notice instead of the
+text; a changed file returns only the diff since your last read. Returns {"path", "content"}.
+
+| parameter | type | default | description |
+|---|---|---|---|
+| `path` | string | required | Project-relative path, e.g. "src/cart.py". Windows separators are accepted. |
+| `start` | integer | 1 | First line, 1-based. |
+| `end` | integer | 0 | Last line, inclusive; 0 = end of file. |
+| `force` | boolean | false | Return the full text even if you read it before (e.g. after compaction). |
+
+## run_compact
+
+Run a command and return output with failures, errors and file:line kept and noise dropped.
+Returns {"exit", "output"}; the output ends with an id for recall() when anything was cut.
+
+| parameter | type | default | description |
+|---|---|---|---|
+| `command` | string | required | Command line, run without a shell, e.g. "pytest -q" or "git log -n 20". |
+| `timeout` | integer | 600 | Seconds before the command is killed. |
+
+## recall
+
+Return the full raw output that run_compact or the shell-output filter shortened.
+
+| parameter | type | default | description |
+|---|---|---|---|
+| `output_id` | string | required | The id printed by run_compact, e.g. "3f9a1c2b7d4e". |
+
+## find_symbol
+
+Where is a symbol defined (best match first), and with refs=true where it is used.
+Returns {"matches": [...], "remaining", "next_offset"?}; results are paged, never cut silently.
+
+| parameter | type | default | description |
+|---|---|---|---|
+| `name` | string | required | Function, class or type name, e.g. "Cart". |
+| `refs` | boolean | false | Also list call sites and uses (source before tests). |
+| `offset` | integer | 0 | Skip this many results; use next_offset from the last call. |
+
+## swarm
+
+Run small tasks on the configured helper model in parallel. Each answer is checked: citations (path:line)
+must exist; drafts must apply and pass the tests in a throwaway copy (never applied to your files).
+Failed answers are retried with the checker's notes, best-of-N, then escalated to the strong model if set.
+With no helper model configured, returns {"mode": "plan", "subagent_tasks": [...]} for your own subagents.
+
+| parameter | type | default | description |
+|---|---|---|---|
+| `tasks` | array | required | Each: {"kind": "ask"|"summarize"|"draft_edit"|"grep", "prompt": str, "files": [paths], "symbols": [names]}. "symbols" narrows the context to those definitions. Tip: swarm_plan builds this list for you. Example: [{"kind": "ask", "prompt": "Where is the discount applied?", "files": ["cart.py"]}] |
+
+## memory_search
+
+Search past Claude Code, Codex and OpenCode sessions, best match first. New sessions are indexed first.
+Returns {"hits": [{"agent", "session", "project", "ts", "role", "snippet"}], "remaining", "next_offset"?}.
+
+| parameter | type | default | description |
+|---|---|---|---|
+| `query` | string | required | Words to look for, e.g. "stripe webhook signature". |
+| `this_project_only` | boolean | true | Only sessions that ran in this project. |
+| `budget_chars` | integer | 2400 | Max characters of snippets returned. |
+| `offset` | integer | 0 | Skip this many hits; use next_offset from the last call. |
+
+## work_state
+
+Compact state that survives compaction: requirements, decisions, changed files, open questions.
+Record each key decision with a ref to the file line or command that backs it.
+
+| parameter | type | default | description |
+|---|---|---|---|
+| `action` | "show" / "decision" / "question" / "resolve" | "show" | show, record, or resolve. |
+| `text` | string | "" | The decision or question, one line. |
+| `ref` | string | "" | Evidence: "path:line", "cmd: <command>" or "#<proof item>". Required for decisions. |
+| `item` | integer | 0 | Id to resolve. |
+
+## workflow
+
+A short step-by-step guide: plan (plan-implement-verify), debug (loop), review (diff checklist).
+
+| parameter | type | default | description |
+|---|---|---|---|
+| `name` | "plan" / "debug" / "review" | required | Which guide. |
+
+
+---
+
+URL: https://akobirjontulqinovfuture.github.io/keelyard/config/
+
+# Configuration
+
+`keelyard init` writes `.keelyard/config.toml`. Every field is optional. This is the default file:
+
+```toml
+# keelyard configuration. Every field is optional.
+
+[proof]
+# Block the agent from finishing until a proof bundle exists.
+gate = true
+# Command used for before/after test runs. Empty = auto-detect.
+test_cmd = ""
+# URL of the running app; when set, a screenshot is required for proof.
+app_url = ""
+# Stop the gate from looping forever: give up after this many blocks per session.
+max_blocks = 3
+
+[rewind]
+enabled = true
+# Files larger than this are left out of snapshots and listed as skipped.
+max_file_mb = 20
+# Tools that trigger a snapshot after they run.
+snapshot_tools = ["Write", "Edit", "MultiEdit", "NotebookEdit", "Bash", "apply_patch", "write", "edit", "bash", "patch"]
+
+[swarm]
+# Max concurrent helper calls.
+concurrency = 16
+# Hard cap on tasks per swarm call.
+max_tasks = 256
+# Which [models.*] entry helpers use.
+helper_model = "cheap"
+# Samples per task (best-of-N), retries with verifier feedback, and the model tried once when all fail
+# ("" = no escalation). Draft patches are also run against the tests in a temporary copy.
+best_of = 2
+retries = 1
+escalate_model = "strong"
+test_patches = true
+# Cooperative mode (default; `keelyard swarm run --basic` turns it off for one run): models tried cheapest first
+# ([] = helper_model then escalate_model), concurrent workers, a peer critic, and hard token caps
+# (0 = no cap). Calls are refused before they are made once a cap would be crossed.
+cooperative = true
+ladder = []
+workers = 64
+critic = false
+budget_tokens = 200000
+task_budget_tokens = 20000
+
+[mcp]
+# Tools the MCP server offers. Every schema costs tokens in every session, so the default is the 14 the
+# workflow needs. "all" adds outline, project_map, rewind_diff, usage_report, route_task, swarm_plan,
+# swarm_verify, status (and proof_screenshot, which "core" adds by itself when [proof].app_url is set).
+# "lazy" sends only read_file, run_compact, find_symbol, proof_status plus tool_search/tool_call (about 60%
+# fewer schema tokens than "core"); every other tool is found and run on demand. It falls back to "core"
+# by itself if it would not be smaller.
+tools = "core"
+
+[saver]
+# Deny a repeat Read of an unchanged file (reset on context compaction).
+dedupe_reads = true
+# Filter large Bash results before the model reads them (raw output kept for `keelyard recall`).
+filter_bash = true
+filter_min_chars = 1200
+# Max characters returned by compress_output before head/tail trimming.
+max_output_chars = 6000
+
+# Optional prices for `keelyard usage`, USD per million tokens. keelyard ships none.
+# [prices."your-model-name"]
+# input = 0.0
+# output = 0.0
+# cache_read = 0.0
+# cache_write = 0.0
+
+# Models are plain names you choose; keelyard never assumes a vendor's lineup.
+# provider = "openai" (any OpenAI-compatible /chat/completions) or "anthropic".
+[models.cheap]
+provider = "openai"
+base_url = "http://localhost:11434/v1"
+model = "qwen2.5-coder:7b"
+api_key_env = ""
+
+[models.strong]
+provider = "anthropic"
+base_url = "https://api.anthropic.com"
+model = "set-me"
+api_key_env = "ANTHROPIC_API_KEY"
+```
+
+`.keelyard/` also holds snapshots (`shadow.git`, `steps.jsonl`), proof bundles, shortened outputs (`raw/`)
+and the hook error log (`hook.log`). The folder contains a `.gitignore` with `*`, so it is never committed.
+
+Environment variables:
+
+| variable | effect |
+|---|---|
+| `KEELYARD_ROOT` | use this folder as the project root instead of searching upward for `.keelyard` or `.git` |
+| `XDG_DATA_HOME` | where the memory index lives (default `~/.local/share/keelyard`) |
+| `NO_COLOR`, `FORCE_COLOR=0` | plain terminal output |
+
+
+---
+
+URL: https://akobirjontulqinovfuture.github.io/keelyard/json/
+
+# Exit codes and JSON
+
+| code | meaning |
+|---|---|
+| `0` | success |
+| `1` | error. The message says what went wrong, and a `hint:` line says what to do. |
+| `2` | usage error: unknown command, missing or bad argument |
+| `3` | a check did not pass: `doctor` found a problem, `proof status` is not proven, `proof test` failed, `selftest` failed |
+
+`keelyard run` exits with the exit code of the command it ran.
+
+With `--json`, a command prints exactly one JSON object to stdout and nothing else. The object always has
+`ok` and `exit`:
+
+```json
+{"proven": false, "missing": ["Requirement #2 not verified: unknown coupons raise ValueError"], "ok": false, "exit": 3}
+```
+
+Errors keep the same shape:
+
+```json
+{"ok": false, "exit": 1, "error": "no step 42 (steps 1-4 exist).", "hint": "run `keelyard rewind list`."}
+```
+
+![json](img/cli-json.png)
+
+
+---
+
+URL: https://akobirjontulqinovfuture.github.io/keelyard/troubleshooting/
+
+# Troubleshooting
+
+Start with `keelyard doctor`. Every failing line includes a hint.
+
+**The agent is not blocked or snapshotted.** Run `keelyard doctor` and check the agents section. For Codex,
+run `/hooks` in Codex and trust the keelyard hooks. Hooks call `keelyard` by its full path, so if you reinstall
+keelyard somewhere else, run `keelyard init` again.
+
+**Something failed silently.** Hooks never break your agent: they log the error and let the agent continue.
+The log is `.keelyard/hook.log`, and `doctor` shows the last entry.
+
+**"not a git repository or keelyard project".** keelyard refuses to snapshot your home folder or `/`. Run
+`keelyard init` in the project folder.
+
+**A large file is missing from a snapshot.** It is over `[rewind].max_file_mb`. `keelyard rewind list --json`
+lists skipped files for each step.
+
+**"no test command found".** Set `[proof].test_cmd`, or pass `--cmd`.
+
+**The gate keeps blocking.** After `max_blocks` reminders (3 by default) it gives up and says so. To turn the
+gate off, set `[proof].gate = false`.
+
+**The project is in a path with spaces or non-ASCII characters.** Both are supported and covered by tests. If
+something breaks, please open an issue and include the output of `keelyard doctor --json`.
+
+
+---
+
+URL: https://akobirjontulqinovfuture.github.io/keelyard/faq/
+
+# FAQ
+
+Short answers to the questions people ask about keelyard. Every claim links to the page with the details.
+
+## What is keelyard?
+
+keelyard is an open-source (Apache-2.0) command-line tool and MCP server that makes AI coding agents
+(Claude Code, Codex CLI and OpenCode) prove their work with a passing test run before they can finish, snapshots
+every edit so any step can be undone, and trims noisy tool output. It runs locally, with no telemetry.
+
+## How do I make Claude Code or Codex prove the tests pass before it says "done"?
+
+Install keelyard and wire it into the project:
+
+```bash
+pipx install keelyard
+keelyard init --agent claude     # or: --agent codex
+```
+
+This adds a `Stop` hook. When the agent changed files and tries to finish without a passing test run after its
+last edit, the hook blocks it and says what is missing. A test run in the agent's own shell counts as proof.
+See [Proof gate](guide/proof.md), [Claude Code in 2 minutes](claude-code.md) and [Codex in 2 minutes](codex.md).
+
+## Can the agent cheat by deleting or weakening tests?
+
+keelyard keeps the proof open when tests are deleted, when there are fewer test functions or assertions, when new
+`skip`/`xfail`/`only` markers appear, or when fewer tests run than before. It does **not** catch every weakening:
+changing an expected value still looks fine. Details: [Guarantees and limits](guarantees.md).
+
+## How do I roll back a bad step an AI coding agent made?
+
+keelyard snapshots the project after every edit and shell command, in a separate git directory
+(`.keelyard/shadow.git`), so your own `.git` is never touched.
+
+```bash
+keelyard rewind list
+keelyard rewind to 3
+```
+
+A rewind first snapshots the current state, so it can be undone too. Snapshots hold files only: databases,
+pushed commits and package installs are not restored. See [Rewind](guide/rewind.md).
+
+## How do I reduce the tokens a coding agent uses?
+
+keelyard's `lean` preset (the default for `init`) caps tool output, filters noisy logs (test runners, git, package
+managers) and gives the agent smaller code views. On our own benchmark of six tasks run in OpenCode
+(3–8 runs per setup), whole-session tokens went from 267,525 to 52,745 (−80%) with equal or better correctness.
+That is one benchmark on one agent with small samples; savings on Claude Code and Codex are not measured yet.
+See [Benchmarks](BENCHMARKS.md) and [Presets](guide/presets.md).
+
+## Does it need an API key or send my code anywhere?
+
+No. keelyard runs on your machine and makes no network calls, except to model endpoints you configure yourself
+for the optional `swarm` and `coop` commands. The end-to-end checks in CI use a local scripted model, so they
+need no key either.
+
+## Which agents and platforms are supported?
+
+Claude Code, Codex CLI and OpenCode, on Linux, macOS and Windows, with Python 3.11+. Claude Code and Codex are
+checked end to end in CI on every push with the real CLIs. See [For agents](guide/agents.md).
+
+## How is keelyard different from other tools?
+
+Most related tools do one thing: shrink output, pack the repo, or track usage. keelyard's main job is the proof
+gate plus undo, with output trimming as a side benefit. See [Alternatives](alternatives.md).
+
+## How do I remove it?
+
+`keelyard uninstall claude` (or `codex`, `opencode`) restores the files `init` changed. `keelyard uninstall
+--global` does the same for user-level config.
+
+
+---
+
+URL: https://akobirjontulqinovfuture.github.io/keelyard/alternatives/
+
+# keelyard alternatives and comparisons
+
+What other tools do, and when you might want them instead of, or next to, keelyard. Facts about other projects
+come from their own READMEs; numbers are only ours where we say "measured". Full table: [Landscape](landscape.md).
+
+## Built-in agent features
+
+| need | built into the agent | what keelyard adds |
+|---|---|---|
+| Undo an edit | Claude Code has `/rewind` checkpoints and OpenCode has `/undo`, each for edits made in its own sessions | snapshots after **every** edit and shell command, across all three agents, in a separate git dir; rewind is itself undoable |
+| Run tests | every agent can run tests when it decides to | a `Stop` hook that **blocks** finishing until a passing run after the last edit is recorded, and keeps the proof open if tests were weakened |
+| Project rules | `CLAUDE.md` / `AGENTS.md` | a short block in those files plus hooks, so the rule is enforced, not only stated |
+
+## Output and context tools
+
+- **rtk**: per-command output filters. On our 8 test commands we measured 56,522 → 5,747 tokens for rtk and
+  5,901 for keelyard. Use rtk if you only want output filtering.
+- **repomix**, **code2prompt**: pack a repository into one prompt. Good for one-shot chats; keelyard instead gives
+  the agent ranked slices (`find_symbol`, outlines) during a session.
+- **serena**: symbol-level navigation and editing over LSP. Deeper code intelligence than keelyard's `find_symbol`.
+- **ccusage**: usage reports from local logs. keelyard's `usage` does a similar job across Claude Code, Codex and OpenCode.
+
+## Workflow packs
+
+- **superpowers**, **spec-kit**: skills and spec-to-task workflows. keelyard ships small plan / review / debug
+  commands, but its focus is enforcing proof, not planning.
+
+## When keelyard is not the right tool
+
+- You need a sandbox. keelyard runs as your user and is not a security boundary ([Guarantees](guarantees.md)).
+- Your project has no tests. The proof gate can only check what your test suite checks.
+- You need to undo database changes, deployments or pushed commits. Snapshots hold files only.
+
+
+---
+
+URL: https://akobirjontulqinovfuture.github.io/keelyard/BENCHMARKS/
+
+# Benchmarks
+
+!!! tip "Rerun them yourself"
+    `make bench` (offline, $0) and `make codex-e2e` reproduce these numbers and the Codex check. Commands and
+    methodology: [BENCHMARKS.md in the repo](https://github.com/akobirjontulqinovfuture/keelyard/blob/main/BENCHMARKS.md#rerun-everything-in-one-command).
+
+Machine: 8 vCPU Linux box, no GPU, Python 3.13. Measured on 2026-10-12. Token counts are `chars / 4`.
+
+## Terse-output rule, measured on local models (Oct 17, 2026)
+
+`python bench/terse.py --models qwen2.5-0.5b,llama3.2-1b,qwen-coder-1.5b --seeds 1,2` (Ollama, Q4, temperature 0.3):
+32 coding prompts x 2 seeds = 64 answers per model and rule. Tokens are Ollama's own counts, input
+(`prompt_eval_count`, so the rule's cost is included) + output (`eval_count`). "Facts" = the answer contains
+what the prompt needs (identifier, fix, error name). Raw numbers: `bench/terse.json`. $0, no paid calls.
+
+| rule | total tokens (3 models) | facts (of 192) |
+|---|---:|---:|
+| old "Be terse: no preamble, no restating the question, no summary of what you are about to do." | 24,053 | 142 |
+| previous rule ("Reply with results only: ... exact and complete.", ~33 tokens) | 31,870 | 150 |
+| **shipped: "Be terse: no preamble or recap. Keep code exact."** (~12 tokens) | **23,428 (−2.6% vs old)** | **155** |
+| "Be terse. Keep code and facts." | 27,310 | 158 |
+| "Be terse: answer first, no preamble or recap; keep code and facts complete." | 28,827 | 155 |
+
+Per model (total / facts): qwen2.5-0.5b old 9,444/44, shipped 8,271/45; llama3.2-1b old 6,884/45,
+previous 10,799/52, shipped 7,022/49; qwen-coder-1.5b old 7,725/53, previous 12,342/51, shipped 8,135/61.
+
+- The shipped rule beats the old line on total tokens and the previous rule on facts summed over three models,
+  but not on every model: on llama3.2-1b it uses 2% more tokens than the old line and keeps fewer facts than the
+  previous rule. The token margin over the old line is small. Not measured with Claude or GPT models.
+- Lossless JSON compaction: pretty `gh search repos --json` output 2,121 → 1,236 tokens (−42%), decoded back
+  exactly (`bench/mechanisms.py`). An already-minified GitHub issue list shrank only 3%.
+- The repeated-failure hint (about 40 tokens, only when it fires) was not measured for savings.
+
+## Token-saving mechanisms, measured locally (Oct 16, 2026)
+
+`python bench/mechanisms.py` (no model, no network, $0). Tokens are `chars / 4`. Fixtures: this repo,
+the installed `httpx` package source, and the two-file `examples/arena/discount/repo`. The keelyard row shifts a little with every commit (it measures itself). Each row compares
+keelyard with what an agent does without it, and checks the agent still gets what it needs.
+Raw numbers: [`bench/mechanisms.json`](https://github.com/akobirjontulqinovfuture/keelyard/blob/main/bench/mechanisms.json).
+
+| mechanism | baseline | keelyard | keelyard repo | httpx | discount (2 files) | correctness check |
+|---|---|---|---|---|---|---|
+| 1 find code | grep the name, read the whole defining file | ranked `find_symbol` page + outline + the definition's lines + `related` | 16,969 → 3,691 (−78%) | 54,731 → 16,717 (−69%) | 107 → 108 (**+1%**) | the definition is in the slice read |
+| 2 re-reads | read, re-read, read after a 1-line edit (5 largest files) | full, "unchanged" notice, diff | 127,392 → 43,289 (−66%) | 146,937 → 49,689 (−66%) | 456 → 387 (−15%) | diff applied to the first read = the edited file; `force=true` returns all of it |
+| 3 logs, real `pytest -v` | raw output | `filter_output` | 1,233 → 9 (all passed) | – | 401 → 149 (−63%, 2 failures) | every error/failure/count line kept; failing test ids kept |
+| 3 logs, corpus (10 tools, pytest padded with 300 passes) | raw | filtered | 7,965 → 1,502 (−81%) | | | same |
+| 4 paging | every match in one response | first page of 20 + `remaining`/`next_offset` | 8,849 → 416 (−95%) | 7,007 → 324 (−95%) | 99 → 99 (0%) | walking every page returns every result in order |
+| 5 work state | re-read the 3 changed files after a compaction (modeled) | `work_state` render | 26,574 → 241 | 33,055 → 182 | 177 → 111 | every ref resolves to a real file line or command |
+| 6 tool schemas per request | `core` (14 tools) | `lazy` (6 tools) | 2,319 → 927 (−60%) | | | every hidden core tool is found by `tool_search` |
+
+What this does not show:
+- Row 1 on a tiny repo is **one token worse**: when the file is smaller than an outline, just read it.
+- Row 4 saves only when the answer is on the first page; reading every page costs slightly more than one dump.
+- Row 5's baseline is a model of what an agent re-reads, not a measured session.
+- Row 6: each on-demand tool use (search + call) adds about 309 tokens that stay in context, so `lazy` is
+  smaller only while a session uses fewer than 4 distinct hidden tools. The proof workflow alone uses about 4,
+  which is why `core` stays the default and `lazy` is opt-in.
+- None of this was measured in a live agent session.
+
+## Head-to-head with rtk (`bench/vs_rtk.py`)
+
+```bash
+gh release download -R rtk-ai/rtk -p 'rtk-x86_64-unknown-linux-musl.tar.gz' && tar xzf rtk-*.tar.gz
+git clone --depth 1 https://github.com/django/django /tmp/djb
+git clone --depth 80 https://github.com/psf/requests /tmp/req
+python bench/vs_rtk.py --rtk ./rtk --django /tmp/djb --history /tmp/req --json bench/vs_rtk_results.json
+python bench/plot_vs_rtk.py
+```
+
+The script builds scratch repos: a Django clone with 5 edited files, 3 untracked and 1 deleted; a pytest project with
+4 failing tests out of 125; and a Rust crate with 2 failing tests out of 42. It runs each command once and feeds the
+same raw output to keelyard, while rtk runs the command itself. `FORCE_COLOR` is removed and `NO_COLOR=1` is set
+for all runs. "Facts" are extracted from the raw output with fixed rules (see `facts_*` in the script) and count as
+kept when every part appears verbatim in the filtered text.
+
+| command | facts | raw tok | keelyard tok | keelyard kept | rtk tok | rtk kept |
+|---|---|---|---|---|---|---|
+| git status | 9 | 161 | 61 | 100% | 58 | 100% |
+| git log -n 40 (requests) | 40 | 6,807 | 950 | 100% | 2,378 | 100% |
+| git diff | 91 | 1,653 | 1,064 | 100% | 1,557 | 100% |
+| grep -rn (django) | 15 | 277 | 230 | 100% | 277 | 100% |
+| find *.py (admin) | 30 | 299 | 136 | 100% | 113 | 100% |
+| ruff check (django/utils) | 307 | 43,582 | 3,022 | 100% | 1,050 | 24% |
+| pytest -v (4 failing of 125) | 7 | 3,289 | 312 | 100% | 195 | 71% |
+| cargo test (2 failing of 42) | 6 | 454 | 126 | 100% | 119 | 100% |
+| **total** | | 56,522 | 5,901 | | 5,747 | |
+
+Caveats: one run per command, eight commands, fact rules written by us. rtk drops line numbers from ruff results and
+some assertion lines from pytest, which is why its retention is lower on those two. rtk handles many more tools.
+
+## Output compression (`keelyard bench`, section `compress`)
+
+The corpus is in `bench/corpus/`. Each file is real output from a real command run on the box, with temporary paths
+rewritten to `/tmp/demo`:
+
+| Log | Command | Raw | Compressed |
+|---|---|---|---|
+| cargo-build.log | `cargo build` (serde, serde_json) | 198 | 198 |
+| git-clone-progress.log | `git clone --progress psf/requests` | 2,101 | 220 |
+| npm-install-verbose.log | `npm install express --loglevel=verbose` | 2,744 | 1,142 |
+| pip-install-verbose.log | `pip install -v httpx rich` | 1,159 | 1,158 |
+| pytest-verbose-failing.log | `pytest -v` with 60 passing and 3 failing tests | 1,814 | 661 |
+| pytest-verbose-passing.log | `pytest -v -rA` on this repo | 884 | 884 |
+| **total** | | **8,900** | **4,263 (−52.1%)** |
+
+All 12 `FAILED`/`assert`/`KeyError` lines of the failing pytest log survive compression.
+The corpus is small. Please contribute more real logs.
+
+## Snapshots
+
+`keelyard bench` snapshots into a temporary shadow repo (your timeline is untouched). *Warm*: one file edited, snapshot. *Cold*: the index is dropped first. Five runs each, Linux box, Oct 2026.
+
+| Repo | Tracked files | First snapshot | Warm median | Cold median |
+|---|---|---|---|---|
+| keelyard | 112 | 174 ms | 8 ms | 24 ms |
+| django (shallow clone) | 7,083 | 2.34 s | 88 ms | 427 ms |
+
+Only files changed since the last snapshot are size-checked, so warm cost tracks the edit, not the repo.
+
+## Arena, local run
+
+`examples/arena/discount`, five hidden checks, qwen-coder 1.5B on Ollama: do nothing 0/5, one-shot qwen 0/5 (226 in / 63 out tokens), reference fix 5/5. No Claude Code, Codex or OpenCode runs yet.
+
+## Feature matrix
+
+`python bench/feature_matrix.py` runs every CLI command and flag, every hook and every MCP tool; results in [feature-matrix.md](feature-matrix.md).
+
+## Swarm with a small local model
+
+These are real calls to `qwen2.5-coder-1.5b-instruct` (Q4_K_M GGUF) served by Ollama on CPU, with concurrency 4.
+There were 12 tasks against this repo: 8 Q&A or summaries, 2 patch drafts and 2 greps.
+
+- Wall time: 4 min 15 s; helper tokens: 14,452 in, 1,409 out.
+- Verified: 3/12. Both greps are local and need no model. One patch passed `git apply --check`; the other did not apply.
+- Q&A: 0/8 answers contained a valid `path:line` citation, and the verifier marked all 8 UNVERIFIED.
+  A second run with a format example in the prompt also verified 0/8. One answer copied the example's
+  file name, so the example was removed again.
+
+Conclusion: the verification layer does its job, but a 1.5B model is not a useful helper. Use a 7B+ local model or
+a hosted cheap model. We have not yet measured how well larger models verify.
+
+## Not yet measured
+
+- `reads`: repeated identical reads in real Claude Code transcripts (harness exists, no transcripts on the build box).
+- `memory`: recall@8 and snippet/transcript ratio on real sessions (harness exists, same reason).
+
+## Swarm quality
+
+`python bench/swarm_quality.py --runs 2`, local qwen-coder 1.5B on Ollama, 2026-10-12. Five one-function bug
+fixes and five "which line does X" questions, in a repo where each file also carries 25 unrelated helpers.
+*Single* is the old swarm: whole file, one sample, diff output, `git apply --check` only. *Pipeline* is the
+new one: context pack, one-definition rewrite, tests on a copy, best-of-3, one retry with feedback, no
+escalation (no strong model configured). Ground truth for fixes is that module's own tests passing with the
+patch; for questions, citing the expected line.
+
+| | single, run 1 / 2 | pipeline, run 1 / 2 |
+|---|---|---|
+| fixes actually correct | 0 / 0 of 5 | 4 / 4 of 5 |
+| fixes marked verified but wrong | 3 / 2 | 0 / 0 |
+| questions citing the right line | 1 / 1 of 5 | 2 / 3 of 5 |
+| questions marked verified | 1 / 1 | 5 / 5 |
+| model calls | 10 / 10 | 33 / 39 |
+| input tokens | 12,435 / 12,435 | 5,034 / 6,309 |
+| output tokens | 1,679 / 1,712 | 2,835 / 3,626 |
+
+Checking patches against tests removed every false "verified" fix, and the rewrite format plus retries took a
+1.5B model from 0 to 4 correct fixes out of 5. Context packs used about half the input tokens despite 3-4x
+more calls. What it does not show: a "verified" answer to a question means its citations exist, not that it is
+right (5 verified, 2-3 right). Ten tasks on one tiny model is a smoke test, not a benchmark; escalation and
+7B+ models are not measured here.
+
+
+### Cooperative swarm vs the best local setup
+
+Same 10 tasks (5 bug fixes, 5 questions), qwen-coder-1.5b on Ollama, 2 runs each. `python bench/swarm_quality.py`.
+
+| mode | correct of 20 (2 runs × 10) | tokens | tokens per correct | wrong patches marked verified |
+|---|---|---|---|---|
+| single | 2 | 27,394 | 13,697 | 5 |
+| pipeline | 15 | 19,073 | 1,272 | 0 |
+| best-local | 18 | 28,081 | 1,560 | 0 |
+| coop-nocritic | 15 | 19,686 | 1,312 | 0 |
+| coop | 15 | 44,149 | 2,943 | 0 |
+
+- `best-local` is the same model with more samples and retries (best_of 5, retries 2). It stands in for "one
+  strong agent" because no stronger model or API key was available. That comparison is still open.
+- `coop` adds the critic. It doubled the tokens and did not improve quality, so `critic` is off by default.
+- `coop-nocritic` (blackboard, voting, budget) costs about the same as the pipeline per correct answer.
+  With one model the ladder had one step, so routing was not exercised here (it is covered by tests).
+
+### Free OpenRouter helper (one run)
+
+Same 10 tasks with `cohere/north-mini-code:free` as the helper, cost $0:
+
+| mode | correct of 10 | tokens | tokens per correct |
+|---|---|---|---|
+| single | 6 | 13,699 | 2,283 |
+| pipeline | 10 | 8,504 | 850 |
+| coop-nocritic | 10 | 12,915 | 1,292 |
+
+One run only: the free tier allows 50 requests a day and the limit was reached during the strong-model modes
+(`nvidia/nemotron-3-ultra-550b-a55b:free`), so there is no strong-model comparison yet. `bench/swarm_openrouter_free.json`.
+
+## keelyard's own overhead
+
+`python bench/overhead.py` counts what keelyard adds to every session (characters / 4 of compact JSON or text):
+
+| item | tokens |
+|---|---|
+| MCP tool schemas, 13 core tools (default) | 1,582 |
+| MCP tool schemas, all 22 tools (`[mcp] tools = "all"`) | 2,401 |
+| MCP server instructions | 77 |
+| CLAUDE.md / AGENTS.md guide block | 144 |
+| session brief, fresh project (cap 600) | 74 |
+| **total per session, fresh project** | **1,877** |
+| workflow guide, only when asked (plan / debug / review) | 240 / 181 / 182 |
+
+Prompt recall adds at most 250 tokens per prompt and only when past sessions match; hints are capped at 12 per session.
+
+Net: the 8 filtered commands above saved 50,621 tokens, so one session that runs them nets
+**48,744** tokens. At the median saving per command, the fixed overhead is repaid after
+4 filtered commands. A session that never runs a noisy command pays the 1,877 tokens and saves nothing;
+these are per-command measurements, not totals from real sessions.
+
+
+---
+
+URL: https://akobirjontulqinovfuture.github.io/keelyard/landscape/
+
+# Landscape
+
+Tools people use to make coding agents cheaper or more reliable, and what keelyard took from them.
+"Measured" means we ran it; everything else is the project's own claim or a description, not our number.
+Stars and licenses from GitHub, October 2026.
+
+| project | stars | license | technique | effect | in keelyard |
+|---|---|---|---|---|---|
+| rtk | 83k | Apache-2.0 | per-command output filters | measured: 56,522 → 5,747 tokens on our 8 commands (keelyard: 5,901) | `run`, `filter`, `run_compact` (own code) |
+| repomix | 28.8k | MIT | pack repo, compress to structure | claimed large reductions; not measured | `code outline`, `project_map` |
+| aider | 49.5k | Apache-2.0 | ranked repo map | described; not measured | `project_map`, swarm context packs |
+| serena | 30k | see repo | symbol-level find/edit over LSP | described; not measured | `find_symbol`, `read_file` ranges |
+| context7 | 63k | MIT | fetch current library docs on demand | described; not measured | not adopted (network service, off-mission) |
+| code2prompt | 7.7k | MIT | repo to prompt with templates | described | not adopted (overlaps repomix idea) |
+| LLMLingua | 6.8k | MIT | model-based prompt compression | paper claims up to 20x | not adopted (needs a model at runtime) |
+| caveman | 111.8k | Apache-2.0 | terse-reply rule | claimed output savings; not measured | one "Be terse" rule |
+| claude-context | 12.6k | MIT | vector code search via MCP | described | not adopted (needs embedding service) |
+| ccusage | 19k | see repo | usage from local logs | n/a | `usage` (own code) |
+| superpowers | 299k | MIT | skills: plan, debug, review workflows | n/a | workflow pack, lazy (240/181/182 tokens on demand) |
+| spec-kit | 141k | MIT | spec → plan → tasks | n/a | `proof add` requirements + plan workflow |
+| claude-task-master | 28k | see repo | task lists for agents | n/a | covered by proof requirements |
+| claude-code-router | 37.7k | MIT | route requests to cheaper models | n/a | `route_task`, swarm escalation |
+| playwright-mcp | 38k | Apache-2.0 | browser control for agents | n/a | `proof_screenshot` (optional extra) |
+
+
+
+---
+
+URL: https://akobirjontulqinovfuture.github.io/keelyard/feature-matrix/
+
+# Feature matrix
+
+Every CLI command and flag, every hook event per agent, every MCP tool, and the end-to-end agent self-test, run against throwaway projects. Generated by `python bench/feature_matrix.py`.
+
+**114 / 114 passed** · keelyard 0.1.0 · commit `9360853` · Python 3.13.5 · Linux · 2026-10-14 · 15s
+
+Expected exit codes: `0` ok, `1` error, `2` usage error, `3` check not passed. Rows that test an error path pass when keelyard fails *cleanly* with the right code.
+
+
+## setup
+
+| | case | command | exit | ms |
+|---|---|---|---|---|
+| ✓ | init --dry-run changes nothing | `keelyard init --dry-run --json` | 0 | 164 |
+| ✓ | init --no-agents | `keelyard init --no-agents --json` | 0 | 156 |
+| ✓ | init --agent claude (hooks, MCP, skill, commands, CLAUDE.md) | `keelyard init --agent claude --json` | 0 | 150 |
+| ✓ | init twice is idempotent | `keelyard init --agent claude --json` | 0 | 166 |
+| ✓ | install codex | `keelyard install codex --json` | 0 | 169 |
+| ✓ | install opencode | `keelyard install opencode --json` | 0 | 118 |
+| ✓ | install unknown agent is a usage error | `keelyard install cursor --json` | 2 | 92 |
+| ✓ | doctor | `keelyard doctor --json` | 0 | 130 |
+| ✓ | status | `keelyard status --json` | 0 | 121 |
+
+## rewind
+
+| | case | command | exit | ms |
+|---|---|---|---|---|
+| ✓ | snap picks up the installed files | `keelyard rewind snap --json` | 0 | 156 |
+| ✓ | snap with no change | `keelyard rewind snap --json` | 0 | 127 |
+| ✓ | snap after an edit | `keelyard rewind snap --json` | 0 | 151 |
+| ✓ | list | `keelyard rewind list --json` | 0 | 120 |
+| ✓ | list -n 1 | `keelyard rewind list -n 1 --json` | 0 | 135 |
+| ✓ | show | `keelyard rewind show 4 --json` | 0 | 128 |
+| ✓ | fork | `keelyard rewind fork 1 ../fork --json` | 0 | 122 |
+| ✓ | to | `keelyard rewind to 1 --json` | 0 | 155 |
+| ✓ | to an unknown step | `keelyard rewind to 999 --json` | 1 | 132 |
+| ✓ | show a non-number | `keelyard rewind show x --json` | 2 | 92 |
+
+## proof
+
+| | case | command | exit | ms |
+|---|---|---|---|---|
+| ✓ | add | `keelyard proof add adds numbers has a Cart --json` | 0 | 136 |
+| ✓ | status (open) exits 3 | `keelyard proof status --json` | 3 | 128 |
+| ✓ | check needs evidence | `keelyard proof check 1   --json` | 1 | 135 |
+| ✓ | check unknown id | `keelyard proof check 9 x --json` | 1 | 122 |
+| ✓ | check | `keelyard proof check 1 test_add passes --json` | 0 | 122 |
+| ✓ | test after (pass) | `keelyard proof test after --cmd python -m pytest -q -p no:cacheprovider --json` | 0 | 459 |
+| ✓ | test with a missing tool exits 3 | `keelyard proof test after --cmd no-such-tool-xyz --json` | 3 | 118 |
+| ✓ | shot without url | `keelyard proof shot --json` | 1 | 113 |
+| ✓ | report | `keelyard proof report --json` | 0 | 141 |
+
+## context
+
+| | case | command | exit | ms |
+|---|---|---|---|---|
+| ✓ | run (pass-through exit) | `keelyard run --json -- python -c print('hi')` | 0 | 151 |
+| ✓ | run a failing command | `keelyard run --json -- python -c import sys; sys.exit(4)` | 4 | 135 |
+| ✓ | run a missing command | `keelyard run --json -- no-such-tool-xyz` | 127 | 139 |
+| ✓ | run with nothing | `keelyard run --json` | 2 | 119 |
+| ✓ | filter --for | `keelyard filter --for pytest -q --json` | 0 | 119 |
+| ✓ | recall unknown id | `keelyard recall abc --json` | 1 | 114 |
+| ✓ | recall bad id | `keelyard recall ../etc --json` | 1 | 167 |
+| ✓ | code outline | `keelyard code outline app.py --json` | 0 | 123 |
+| ✓ | code outline missing file | `keelyard code outline nope.py --json` | 1 | 129 |
+| ✓ | code map | `keelyard code map --json` | 0 | 121 |
+| ✓ | code find | `keelyard code find Cart --json` | 0 | 118 |
+
+## memory
+
+| | case | command | exit | ms |
+|---|---|---|---|---|
+| ✓ | index | `keelyard memory index --json` | 0 | 166 |
+| ✓ | stats | `keelyard memory stats --json` | 0 | 139 |
+| ✓ | search | `keelyard memory search websocket --json` | 0 | 172 |
+| ✓ | search with odd input | `keelyard memory search NEAR( "* --json` | 0 | 123 |
+
+## usage
+
+| | case | command | exit | ms |
+|---|---|---|---|---|
+| ✓ | usage --by day | `keelyard usage --json` | 0 | 121 |
+| ✓ | usage --by model | `keelyard usage --by model --json` | 0 | 124 |
+| ✓ | usage --by agent | `keelyard usage --by agent --json` | 0 | 127 |
+
+## swarm
+
+| | case | command | exit | ms |
+|---|---|---|---|---|
+| ✓ | swarm run missing file | `keelyard swarm run nope.json --json` | 1 | 203 |
+| ✓ | swarm run bad JSON | `keelyard swarm run app.py --json` | 1 | 186 |
+| ✓ | swarm plan | `keelyard swarm plan fix add for strings --json` | 0 | 221 |
+| ✓ | swarm plan --subagents | `keelyard swarm plan where is add defined --subagents` | 0 | 213 |
+
+## arena
+
+| | case | command | exit | ms |
+|---|---|---|---|---|
+| ✓ | arena run missing spec | `keelyard arena run nope.toml --json` | 1 | 119 |
+| ✓ | arena render without results | `keelyard arena render nowhere --json` | 1 | 124 |
+
+## bench
+
+| | case | command | exit | ms |
+|---|---|---|---|---|
+| ✓ | bench leaves the timeline alone | `keelyard bench --json` | 0 | 302 |
+
+## cli
+
+| | case | command | exit | ms |
+|---|---|---|---|---|
+| ✓ | --version | `keelyard --version` | 0 | 89 |
+| ✓ | no command prints help | `keelyard ` | 0 | 91 |
+| ✓ | unknown command | `keelyard frobnicate --json` | 2 | 90 |
+| ✓ | reinstall codex (rewind removed it) | `keelyard install codex --json` | 0 | 123 |
+| ✓ | reinstall opencode | `keelyard install opencode --json` | 0 | 123 |
+| ✓ | uninstall codex keeps AGENTS.md for opencode | `keelyard uninstall codex --json` | 0 | 114 |
+| ✓ | uninstall opencode removes the AGENTS.md block | `keelyard uninstall opencode --json` | 0 | 139 |
+
+## hooks
+
+| | case | command | exit | ms |
+|---|---|---|---|---|
+| ✓ | claude SessionStart | `keelyard hook claude SessionStart` | 0 | 161 |
+| ✓ | claude UserPromptSubmit | `keelyard hook claude UserPromptSubmit` | 0 | 116 |
+| ✓ | claude PostToolUse Read | `keelyard hook claude PostToolUse` | 0 | 122 |
+| ✓ | claude PreToolUse Read (repeat read denied) | `keelyard hook claude PreToolUse` | 0 | 106 |
+| ✓ | claude PostToolUse Write (snapshot) | `keelyard hook claude PostToolUse` | 0 | 130 |
+| ✓ | claude PostToolUse Bash (output filtered) | `keelyard hook claude PostToolUse` | 0 | 146 |
+| ✓ | claude PreCompact | `keelyard hook claude PreCompact` | 0 | 126 |
+| ✓ | claude Stop (blocks without proof) | `keelyard hook claude Stop` | 0 | 123 |
+| ✓ | codex PostToolUse apply_patch | `keelyard hook codex PostToolUse` | 0 | 128 |
+| ✓ | codex Stop | `keelyard hook codex Stop` | 0 | 128 |
+| ✓ | opencode PostToolUse edit | `keelyard hook opencode PostToolUse` | 0 | 144 |
+| ✓ | unknown event is ignored | `keelyard hook claude Future` | 0 | 140 |
+| ✓ | garbage stdin is ignored | `keelyard hook claude Stop` | 0 | 125 |
+| ✓ | cwd outside any project is ignored | `keelyard hook claude Stop` | 0 | 150 |
+
+## MCP tools
+
+Called over stdio by the official MCP client. Error rows check that bad input is refused.
+
+| | tool | arguments | result |
+|---|---|---|---|
+| ✓ | `status` | `{}` | ok |
+| ✓ | `workflow` | `{'name': 'plan'}` | ok |
+| ✓ | `proof_requirements` | `{'items': ['adds numbers']}` | ok |
+| ✓ | `proof_requirements` | `{'items': []}` | Error executing tool proof_requirements: 1 validation error for proof_requirementsArguments |
+| ✓ | `proof_check` | `{'requirement_id': 1, 'evidence': 'test_add passes'}` | ok |
+| ✓ | `proof_check` | `{'requirement_id': 7, 'evidence': 'x'}` | Error executing tool proof_check: no requirement 7 |
+| ✓ | `proof_run_tests` | `{'phase': 'after', 'command': 'python -m pytest -q -p no:...` | ok |
+| ✓ | `proof_run_tests` | `{'phase': 'later'}` | Error executing tool proof_run_tests: 1 validation error for proof_run_testsArguments |
+| ✓ | `proof_screenshot` | `{}` | Error executing tool proof_screenshot: no url given and [proof].app_url not set |
+| ✓ | `proof_status` | `{}` | ok |
+| ✓ | `rewind_list` | `{'last': 5}` | ok |
+| ✓ | `rewind_diff` | `{'step': 1}` | ok |
+| ✓ | `rewind_diff` | `{'step': 0}` | Error executing tool rewind_diff: 1 validation error for rewind_diffArguments |
+| ✓ | `rewind_to` | `{'step': 1}` | ok |
+| ✓ | `read_file` | `{'path': 'app.py'}` | ok |
+| ✓ | `read_file` | `{'path': 'app.py'}` | ok |
+| ✓ | `read_file` | `{'path': '../../etc/passwd'}` | Error executing tool read_file: ../../etc/passwd is outside the project root |
+| ✓ | `read_file` | `{'path': '.keelyard/config.toml'}` | Error executing tool read_file: refusing to read keelyard internal state |
+| ✓ | `run_compact` | `{'command': 'python -c "print(\'ok\')"'}` | ok |
+| ✓ | `recall` | `{'output_id': 'nope'}` | Error executing tool recall: unknown output id 'nope'. Hint: use the id from the last line of run_co |
+| ✓ | `outline` | `{'path': 'app.py'}` | ok |
+| ✓ | `project_map` | `{}` | ok |
+| ✓ | `find_symbol` | `{'name': 'add'}` | ok |
+| ✓ | `usage_report` | `{'by': 'model'}` | ok |
+| ✓ | `route_task` | `{'task': 'design the concurrency architecture', 'n_files'...` | ok |
+| ✓ | `swarm` | `{'tasks': [{'kind': 'ask', 'prompt': 'where is add?', 'fi...` | ok |
+| ✓ | `swarm_plan` | `{'goal': 'fix add so it handles strings'}` | ok |
+| ✓ | `swarm_verify` | `{'answer': 'app.py:2 `return a + b`', 'files': ['app.py']}` | ok |
+| ✓ | `swarm_verify` | `{'answer': 'app.py:99 nothing', 'files': ['app.py']}` | ok |
+| ✓ | `memory_search` | `{'query': 'websocket', 'this_project_only': False}` | ok |
+
+## Agent self-test
+
+`keelyard selftest`: a scripted agent completes a task through MCP and Claude Code hook payloads.
+
+| | step | detail | ms |
+|---|---|---|---|
+| ✓ | mcp: server starts and lists tools | 13 tools, all described | 0 |
+| ✓ | hooks: session start + prompt | baseline snapshot, 84-token brief injected | 318 |
+| ✓ | proof: requirements recorded |  | 5 |
+| ✓ | context: find_symbol + deduplicated read | cart.py:1: def total(prices, discount=0): | 13 |
+| ✓ | memory: finds the fix from a past session | 1 hit(s) | 9 |
+| ✓ | swarm: helper answer is citation-checked | 1/1 verified | 40 |
+| ✓ | proof gate: blocks 'done' without evidence | - Requirement #1 not verified: total() applies the discount | 279 |
+| ✓ | rewind: wrong edit undone | restored #1, undo with #2 | 39 |
+| ✓ | proof: tests pass, gate lets the agent finish | exit 0, report report.html | 309 |
+| ✓ | context: run_compact output | 89 chars | 20 |

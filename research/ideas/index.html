@@ -1,0 +1,1832 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="keelyard makes Claude Code, Codex and OpenCode prove their work with passing tests, undo any step, and use fewer tokens.">
+      
+      
+      
+        <link rel="canonical" href="https://akobirjontulqinovfuture.github.io/keelyard/research/ideas/">
+      
+      
+      
+      
+        
+      
+      
+      <link rel="icon" href="../../assets/logo.svg">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.8.0">
+    
+    
+      
+        <title>Research: popular AI coding-agent repos and what keelyard can learn - keelyard</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/stylesheets/main.57a0d79d.min.css">
+      
+        
+        <link rel="stylesheet" href="../../assets/stylesheets/palette.fb2fffe2.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/extra.css">
+    
+    <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  <meta name="google-site-verification" content="LD1PDl6JkhxIh9Ar85_ntpkahEFWdHd4F9_tPWzVfXM" /><meta property="og:type" content="website">
+  <meta property="og:site_name" content="keelyard">
+  <meta property="og:title" content="Research: popular AI coding-agent repos and what keelyard can learn · keelyard">
+  <meta property="og:description" content="keelyard makes Claude Code, Codex and OpenCode prove their work with passing tests, undo any step, and use fewer tokens.">
+  <meta property="og:url" content="https://akobirjontulqinovfuture.github.io/keelyard/research/ideas/">
+  <meta property="og:image" content="https://akobirjontulqinovfuture.github.io/keelyard/assets/social-preview.png">
+  <meta property="og:image:width" content="1280">
+  <meta property="og:image:height" content="640">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Research: popular AI coding-agent repos and what keelyard can learn · keelyard">
+  <meta name="twitter:description" content="keelyard makes Claude Code, Codex and OpenCode prove their work with passing tests, undo any step, and use fewer tokens.">
+  <meta name="twitter:image" content="https://akobirjontulqinovfuture.github.io/keelyard/assets/social-preview.png">
+
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#research-popular-ai-coding-agent-repos-and-what-keelyard-can-learn" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../.." title="keelyard" class="md-header__button md-logo" aria-label="keelyard" data-md-component="logo">
+      
+  <img src="../../assets/logo.svg" alt="logo">
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            keelyard
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Research: popular AI coding-agent repos and what keelyard can learn
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: light)" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Dark mode"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Dark mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="m17.75 4.09-2.53 1.94.91 3.06-2.63-1.81-2.63 1.81.91-3.06-2.53-1.94L12.44 4l1.06-3 1.06 3zm3.5 6.91-1.64 1.25.59 1.98-1.7-1.17-1.7 1.17.59-1.98L15.75 11l2.06-.05L18.5 9l.69 1.95zm-2.28 4.95c.83-.08 1.72 1.1 1.19 1.85-.32.45-.66.87-1.08 1.27C15.17 23 8.84 23 4.94 19.07c-3.91-3.9-3.91-10.24 0-14.14.4-.4.82-.76 1.27-1.08.75-.53 1.93.36 1.85 1.19-.27 2.86.69 5.83 2.89 8.02a9.96 9.96 0 0 0 8.02 2.89m-1.64 2.02a12.08 12.08 0 0 1-7.8-3.47c-2.17-2.19-3.33-5-3.49-7.82-2.81 3.14-2.7 7.96.31 10.98 3.02 3.01 7.84 3.12 10.98.31"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: dark)" data-md-color-scheme="slate" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Light mode"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Light mode" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 7a5 5 0 0 1 5 5 5 5 0 0 1-5 5 5 5 0 0 1-5-5 5 5 0 0 1 5-5m0 2a3 3 0 0 0-3 3 3 3 0 0 0 3 3 3 3 0 0 0 3-3 3 3 0 0 0-3-3m0-7 2.39 3.42C13.65 5.15 12.84 5 12 5s-1.65.15-2.39.42zM3.34 7l4.16-.35A7.2 7.2 0 0 0 5.94 8.5c-.44.74-.69 1.5-.83 2.29zm.02 10 1.76-3.77a7.131 7.131 0 0 0 2.38 4.14zM20.65 7l-1.77 3.79a7.02 7.02 0 0 0-2.38-4.15zm-.01 10-4.14.36c.59-.51 1.12-1.14 1.54-1.86.42-.73.69-1.5.83-2.29zM12 22l-2.41-3.44c.74.27 1.55.44 2.41.44.82 0 1.63-.17 2.37-.44z"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/akobirjontulqinovfuture/keelyard" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+  </div>
+  <div class="md-source__repository">
+    keelyard
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../.." title="keelyard" class="md-nav__button md-logo" aria-label="keelyard" data-md-component="logo">
+      
+  <img src="../../assets/logo.svg" alt="logo">
+
+    </a>
+    keelyard
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/akobirjontulqinovfuture/keelyard" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+  </div>
+  <div class="md-source__repository">
+    keelyard
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../.." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../quickstart/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Quickstart
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../codex/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Codex in 2 minutes
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../claude-code/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Claude Code in 2 minutes
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../guarantees/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Guarantees and limits
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6" >
+        
+          
+          <label class="md-nav__link" for="__nav_6" id="__nav_6_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Guide
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_6_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_6">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Guide
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../guide/proof/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Proof gate
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../guide/rewind/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Rewind
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../guide/context/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Smaller context
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../guide/memory/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Memory and usage
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../guide/brain/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Always on
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../guide/presets/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Presets
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../guide/swarm/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Swarm
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../guide/arena/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Arena
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../guide/agents/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    For agents
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_7" >
+        
+          
+          <label class="md-nav__link" for="__nav_7" id="__nav_7_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Reference
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_7_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_7">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Reference
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../cli/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CLI
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../mcp/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    MCP tools
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../config/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Configuration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../json/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Exit codes and JSON
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../troubleshooting/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Troubleshooting
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../faq/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    FAQ
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../alternatives/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Alternatives
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../BENCHMARKS/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Benchmarks
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../landscape/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Landscape
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../feature-matrix/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Feature matrix
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#top-10-ideas-keelyard-lacked-ranked-by-source-popularity-estimated-value" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Top 10 ideas keelyard lacked, ranked by source popularity × estimated value
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+  
+
+
+<h1 id="research-popular-ai-coding-agent-repos-and-what-keelyard-can-learn">Research: popular AI coding-agent repos and what keelyard can learn<a class="headerlink" href="#research-popular-ai-coding-agent-repos-and-what-keelyard-can-learn" title="Permanent link">&para;</a></h1>
+<p>Collected Oct 16, 2026 with the GitHub API (<code>gh api repos/&lt;name&gt;</code>). Ranked by popularity = stars + 3 × forks.
+GitHub does not expose view counts for other people's repos, so views are not used. Star counts are what the API
+returned that day. Core ideas are taken from each project's README/description; <strong>no code was read or copied</strong>.
+Anything keelyard builds from these ideas is written from scratch.</p>
+<p>Value column: token savings / quality (H, M, L; '-' = host, list or out of scope). Estimates, not measurements.
+Left out on purpose: leaked system-prompt collections, refusal-removal tools, and free-provider gateways.</p>
+<table>
+<thead>
+<tr>
+<th>#</th>
+<th>repo</th>
+<th style="text-align: right;">stars</th>
+<th style="text-align: right;">forks</th>
+<th>license</th>
+<th>core idea</th>
+<th>keelyard has it?</th>
+<th>value</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td><a href="https://github.com/affaan-m/ECC">affaan-m/ECC</a></td>
+<td style="text-align: right;">281,253</td>
+<td style="text-align: right;">41,819</td>
+<td>MIT</td>
+<td>Harness bundle: skills, 'instincts' (learned rules), memory, security checks</td>
+<td>partly (rules, memory, guards)</td>
+<td>M/M</td>
+</tr>
+<tr>
+<td>2</td>
+<td><a href="https://github.com/anomalyco/opencode">anomalyco/opencode</a></td>
+<td style="text-align: right;">214,287</td>
+<td style="text-align: right;">28,758</td>
+<td>MIT</td>
+<td>Open-source coding agent (host keelyard supports)</td>
+<td>n/a (host)</td>
+<td>-</td>
+</tr>
+<tr>
+<td>3</td>
+<td><a href="https://github.com/multica-ai/andrej-karpathy-skills">multica-ai/andrej-karpathy-skills</a></td>
+<td style="text-align: right;">220,317</td>
+<td style="text-align: right;">22,141</td>
+<td>none</td>
+<td>One CLAUDE.md: think first, simplicity, surgical changes, goal-driven (tests) execution</td>
+<td>partly (proof gate = goal-driven); no 'surgical changes' rule</td>
+<td>L/H</td>
+</tr>
+<tr>
+<td>4</td>
+<td><a href="https://github.com/anthropics/claude-code">anthropics/claude-code</a></td>
+<td style="text-align: right;">151,218</td>
+<td style="text-align: right;">26,850</td>
+<td>none</td>
+<td>Coding agent; hooks, skills, MCP (host keelyard supports)</td>
+<td>n/a (host)</td>
+<td>-</td>
+</tr>
+<tr>
+<td>5</td>
+<td><a href="https://github.com/garrytan/gstack">garrytan/gstack</a></td>
+<td style="text-align: right;">136,666</td>
+<td style="text-align: right;">20,278</td>
+<td>MIT</td>
+<td>Opinionated role skills (review, release, QA) for Claude Code</td>
+<td>partly (workflow guides)</td>
+<td>L/M</td>
+</tr>
+<tr>
+<td>6</td>
+<td><a href="https://github.com/openai/codex">openai/codex</a></td>
+<td style="text-align: right;">129,532</td>
+<td style="text-align: right;">20,389</td>
+<td>Apache-2.0</td>
+<td>Coding agent (host keelyard supports)</td>
+<td>n/a (host)</td>
+<td>-</td>
+</tr>
+<tr>
+<td>7</td>
+<td><a href="https://github.com/github/spec-kit">github/spec-kit</a></td>
+<td style="text-align: right;">141,545</td>
+<td style="text-align: right;">12,672</td>
+<td>MIT</td>
+<td>Spec-driven development: spec → plan → tasks before code</td>
+<td>partly (proof requirements, workflow plan)</td>
+<td>L/M</td>
+</tr>
+<tr>
+<td>8</td>
+<td><a href="https://github.com/farion1231/cc-switch">farion1231/cc-switch</a></td>
+<td style="text-align: right;">145,191</td>
+<td style="text-align: right;">9,611</td>
+<td>MIT</td>
+<td>Desktop switcher for agent configs/providers</td>
+<td>no (out of scope)</td>
+<td>L/L</td>
+</tr>
+<tr>
+<td>9</td>
+<td><a href="https://github.com/Graphify-Labs/graphify">Graphify-Labs/graphify</a></td>
+<td style="text-align: right;">127,206</td>
+<td style="text-align: right;">12,273</td>
+<td>Apache-2.0</td>
+<td>Codebase + docs → queryable knowledge graph</td>
+<td>partly (find_symbol, related)</td>
+<td>M/M</td>
+</tr>
+<tr>
+<td>10</td>
+<td><a href="https://github.com/punkpeye/awesome-mcp-servers">punkpeye/awesome-mcp-servers</a></td>
+<td style="text-align: right;">96,474</td>
+<td style="text-align: right;">17,785</td>
+<td>MIT</td>
+<td>Curated MCP server list</td>
+<td>n/a (list)</td>
+<td>-</td>
+</tr>
+<tr>
+<td>11</td>
+<td><a href="https://github.com/addyosmani/agent-skills">addyosmani/agent-skills</a></td>
+<td style="text-align: right;">107,328</td>
+<td style="text-align: right;">11,170</td>
+<td>MIT</td>
+<td>Production engineering skills as agent instructions</td>
+<td>partly (workflows)</td>
+<td>L/M</td>
+</tr>
+<tr>
+<td>12</td>
+<td><a href="https://github.com/JuliusBrussee/caveman">JuliusBrussee/caveman</a></td>
+<td style="text-align: right;">113,042</td>
+<td style="text-align: right;">6,540</td>
+<td>Apache-2.0</td>
+<td>Terse output style ('say less'), output/log shrinking, model routing</td>
+<td>yes now (terse rule, filters, route)</td>
+<td>H/M</td>
+</tr>
+<tr>
+<td>13</td>
+<td><a href="https://github.com/thedotmack/claude-mem">thedotmack/claude-mem</a></td>
+<td style="text-align: right;">101,212</td>
+<td style="text-align: right;">8,866</td>
+<td>Apache-2.0</td>
+<td>Captures session activity, compresses it, re-injects relevant context later</td>
+<td>yes (memory_search, brief recall, work_state)</td>
+<td>M/M</td>
+</tr>
+<tr>
+<td>14</td>
+<td><a href="https://github.com/OpenHands/OpenHands">OpenHands/OpenHands</a></td>
+<td style="text-align: right;">91,068</td>
+<td style="text-align: right;">12,073</td>
+<td>MIT</td>
+<td>Autonomous dev agent platform; condensers for long histories</td>
+<td>partly (work_state as condensed state)</td>
+<td>M/M</td>
+</tr>
+<tr>
+<td>15</td>
+<td><a href="https://github.com/modelcontextprotocol/servers">modelcontextprotocol/servers</a></td>
+<td style="text-align: right;">91,313</td>
+<td style="text-align: right;">11,795</td>
+<td>NOASSERTION</td>
+<td>Reference MCP servers (filesystem, git, memory, fetch)</td>
+<td>partly</td>
+<td>L/L</td>
+</tr>
+<tr>
+<td>16</td>
+<td><a href="https://github.com/shareAI-lab/learn-claude-code">shareAI-lab/learn-claude-code</a></td>
+<td style="text-align: right;">78,711</td>
+<td style="text-align: right;">12,594</td>
+<td>MIT</td>
+<td>Tutorial: build a minimal agent harness</td>
+<td>n/a</td>
+<td>-</td>
+</tr>
+<tr>
+<td>17</td>
+<td><a href="https://github.com/Egonex-AI/Understand-Anything">Egonex-AI/Understand-Anything</a></td>
+<td style="text-align: right;">86,616</td>
+<td style="text-align: right;">7,300</td>
+<td>MIT</td>
+<td>Interactive knowledge graph of code for exploration</td>
+<td>no (UI)</td>
+<td>L/L</td>
+</tr>
+<tr>
+<td>18</td>
+<td><a href="https://github.com/tt-a1i/archify">tt-a1i/archify</a></td>
+<td style="text-align: right;">84,429</td>
+<td style="text-align: right;">5,713</td>
+<td>MIT</td>
+<td>Agent skill that draws architecture diagrams</td>
+<td>no</td>
+<td>L/L</td>
+</tr>
+<tr>
+<td>19</td>
+<td><a href="https://github.com/rtk-ai/rtk">rtk-ai/rtk</a></td>
+<td style="text-align: right;">83,615</td>
+<td style="text-align: right;">5,310</td>
+<td>Apache-2.0</td>
+<td>CLI proxy that filters dev-command output (60-90% fewer tokens)</td>
+<td>yes (keelyard run, output filters; benchmarked vs rtk)</td>
+<td>H/M</td>
+</tr>
+<tr>
+<td>20</td>
+<td><a href="https://github.com/cline/cline">cline/cline</a></td>
+<td style="text-align: right;">70,418</td>
+<td style="text-align: right;">7,680</td>
+<td>Apache-2.0</td>
+<td>IDE/CLI coding agent; plan/act modes, checkpoints</td>
+<td>yes (rewind = checkpoints)</td>
+<td>-</td>
+</tr>
+<tr>
+<td>21</td>
+<td><a href="https://github.com/headroomlabs-ai/headroom">headroomlabs-ai/headroom</a></td>
+<td style="text-align: right;">75,514</td>
+<td style="text-align: right;">5,865</td>
+<td>Apache-2.0</td>
+<td>Compresses tool output by content type (JSON crusher, code, prose), reversible retrieval, cache-prefix alignment, learn from failures</td>
+<td>partly (logs, recall); no JSON-aware compression, no cache-stability check</td>
+<td>H/M</td>
+</tr>
+<tr>
+<td>22</td>
+<td><a href="https://github.com/mem0ai/mem0">mem0ai/mem0</a></td>
+<td style="text-align: right;">67,300</td>
+<td style="text-align: right;">7,932</td>
+<td>Apache-2.0</td>
+<td>Memory layer: extract facts, store, retrieve</td>
+<td>partly (FTS memory, no fact extraction)</td>
+<td>M/M</td>
+</tr>
+<tr>
+<td>23</td>
+<td><a href="https://github.com/bmad-code-org/BMAD-METHOD">bmad-code-org/BMAD-METHOD</a></td>
+<td style="text-align: right;">54,229</td>
+<td style="text-align: right;">6,096</td>
+<td>NOASSERTION</td>
+<td>Agile role-based workflow (analyst, PM, architect, dev)</td>
+<td>partly (workflows)</td>
+<td>L/L</td>
+</tr>
+<tr>
+<td>24</td>
+<td><a href="https://github.com/upstash/context7">upstash/context7</a></td>
+<td style="text-align: right;">63,150</td>
+<td style="text-align: right;">3,102</td>
+<td>MIT</td>
+<td>Up-to-date library docs fetched on demand for agents</td>
+<td>no</td>
+<td>M/H</td>
+</tr>
+<tr>
+<td>25</td>
+<td><a href="https://github.com/hesreallyhim/awesome-claude-code">hesreallyhim/awesome-claude-code</a></td>
+<td style="text-align: right;">55,836</td>
+<td style="text-align: right;">4,828</td>
+<td>NOASSERTION</td>
+<td>Curated Claude Code resources</td>
+<td>n/a (list)</td>
+<td>-</td>
+</tr>
+<tr>
+<td>26</td>
+<td><a href="https://github.com/Aider-AI/aider">Aider-AI/aider</a></td>
+<td style="text-align: right;">49,583</td>
+<td style="text-align: right;">5,064</td>
+<td>Apache-2.0</td>
+<td>Pair-programming agent; ranked repo map (graph-ranked symbols) within a token budget</td>
+<td>partly (project_map, find_symbol ranking); no graph-ranked map</td>
+<td>H/M</td>
+</tr>
+<tr>
+<td>27</td>
+<td><a href="https://github.com/DeusData/codebase-memory-mcp">DeusData/codebase-memory-mcp</a></td>
+<td style="text-align: right;">46,713</td>
+<td style="text-align: right;">3,848</td>
+<td>MIT</td>
+<td>Indexed code graph MCP: call graph, impact analysis</td>
+<td>partly (refs, related)</td>
+<td>M/M</td>
+</tr>
+<tr>
+<td>28</td>
+<td><a href="https://github.com/wshobson/agents">wshobson/agents</a></td>
+<td style="text-align: right;">40,912</td>
+<td style="text-align: right;">4,340</td>
+<td>MIT</td>
+<td>Marketplace of subagents/plugins</td>
+<td>no (out of scope)</td>
+<td>L/L</td>
+</tr>
+<tr>
+<td>29</td>
+<td><a href="https://github.com/continuedev/continue">continuedev/continue</a></td>
+<td style="text-align: right;">36,231</td>
+<td style="text-align: right;">5,479</td>
+<td>Apache-2.0</td>
+<td>Open-source coding agent / IDE assistant</td>
+<td>n/a</td>
+<td>-</td>
+</tr>
+<tr>
+<td>30</td>
+<td><a href="https://github.com/github/github-mcp-server">github/github-mcp-server</a></td>
+<td style="text-align: right;">33,664</td>
+<td style="text-align: right;">5,229</td>
+<td>MIT</td>
+<td>GitHub MCP server</td>
+<td>no (out of scope)</td>
+<td>-</td>
+</tr>
+<tr>
+<td>31</td>
+<td><a href="https://github.com/microsoft/playwright-mcp">microsoft/playwright-mcp</a></td>
+<td style="text-align: right;">38,239</td>
+<td style="text-align: right;">3,262</td>
+<td>Apache-2.0</td>
+<td>Browser automation over MCP via accessibility snapshots</td>
+<td>partly (proof_screenshot)</td>
+<td>L/M</td>
+</tr>
+<tr>
+<td>32</td>
+<td><a href="https://github.com/musistudio/claude-code-router">musistudio/claude-code-router</a></td>
+<td style="text-align: right;">37,705</td>
+<td style="text-align: right;">3,163</td>
+<td>MIT</td>
+<td>Route Claude Code requests to other models per task</td>
+<td>partly (route_task heuristic)</td>
+<td>M/L</td>
+</tr>
+<tr>
+<td>33</td>
+<td><a href="https://github.com/getzep/graphiti">getzep/graphiti</a></td>
+<td style="text-align: right;">31,817</td>
+<td style="text-align: right;">3,276</td>
+<td>Apache-2.0</td>
+<td>Temporal knowledge graph memory</td>
+<td>no</td>
+<td>L/M</td>
+</tr>
+<tr>
+<td>34</td>
+<td><a href="https://github.com/QwenLM/qwen-code">QwenLM/qwen-code</a></td>
+<td style="text-align: right;">28,527</td>
+<td style="text-align: right;">3,217</td>
+<td>Apache-2.0</td>
+<td>Coding agent CLI</td>
+<td>n/a</td>
+<td>-</td>
+</tr>
+<tr>
+<td>35</td>
+<td><a href="https://github.com/rohitg00/agentmemory">rohitg00/agentmemory</a></td>
+<td style="text-align: right;">29,586</td>
+<td style="text-align: right;">2,606</td>
+<td>Apache-2.0</td>
+<td>Persistent agent memory benchmarked on real sessions</td>
+<td>partly (memory)</td>
+<td>M/M</td>
+</tr>
+<tr>
+<td>36</td>
+<td><a href="https://github.com/oraios/serena">oraios/serena</a></td>
+<td style="text-align: right;">30,326</td>
+<td style="text-align: right;">2,114</td>
+<td>NOASSERTION</td>
+<td>Semantic (LSP) code retrieval and symbol-level editing over MCP</td>
+<td>partly (regex symbols; no LSP)</td>
+<td>H/H</td>
+</tr>
+<tr>
+<td>37</td>
+<td><a href="https://github.com/mksglu/context-mode">mksglu/context-mode</a></td>
+<td style="text-align: right;">30,136</td>
+<td style="text-align: right;">2,124</td>
+<td>NOASSERTION</td>
+<td>Sandboxed tool output (only summaries enter context), session event log in SQLite, 'think in code'</td>
+<td>partly (filters, recall, work_state)</td>
+<td>H/M</td>
+</tr>
+<tr>
+<td>38</td>
+<td><a href="https://github.com/eyaltoledano/claude-task-master">eyaltoledano/claude-task-master</a></td>
+<td style="text-align: right;">28,233</td>
+<td style="text-align: right;">2,619</td>
+<td>NOASSERTION</td>
+<td>PRD → task graph with dependencies for agents</td>
+<td>partly (proof requirements)</td>
+<td>L/M</td>
+</tr>
+<tr>
+<td>39</td>
+<td><a href="https://github.com/PrefectHQ/fastmcp">PrefectHQ/fastmcp</a></td>
+<td style="text-align: right;">28,106</td>
+<td style="text-align: right;">2,478</td>
+<td>Apache-2.0</td>
+<td>Python MCP framework</td>
+<td>uses official mcp SDK</td>
+<td>-</td>
+</tr>
+<tr>
+<td>40</td>
+<td><a href="https://github.com/OthmanAdi/planning-with-files">OthmanAdi/planning-with-files</a></td>
+<td style="text-align: right;">27,477</td>
+<td style="text-align: right;">2,277</td>
+<td>MIT</td>
+<td>Plan/findings/progress on disk, re-injected after /clear or compaction</td>
+<td>yes (work_state in the brief)</td>
+<td>M/H</td>
+</tr>
+<tr>
+<td>41</td>
+<td><a href="https://github.com/yamadashy/repomix">yamadashy/repomix</a></td>
+<td style="text-align: right;">28,867</td>
+<td style="text-align: right;">1,618</td>
+<td>MIT</td>
+<td>Pack a repo into one AI-friendly file, with token counts</td>
+<td>no (opposite approach)</td>
+<td>L/L</td>
+</tr>
+<tr>
+<td>42</td>
+<td><a href="https://github.com/gastownhall/beads">gastownhall/beads</a></td>
+<td style="text-align: right;">27,939</td>
+<td style="text-align: right;">1,892</td>
+<td>MIT</td>
+<td>Issue tracker as agent memory (dependency-aware tasks)</td>
+<td>partly (work_state)</td>
+<td>L/M</td>
+</tr>
+<tr>
+<td>43</td>
+<td><a href="https://github.com/SuperClaude-Org/SuperClaude_Framework">SuperClaude-Org/SuperClaude_Framework</a></td>
+<td style="text-align: right;">23,909</td>
+<td style="text-align: right;">1,992</td>
+<td>MIT</td>
+<td>Commands, personas, token-efficiency mode</td>
+<td>partly (terse rule, workflows)</td>
+<td>L/M</td>
+</tr>
+<tr>
+<td>44</td>
+<td><a href="https://github.com/coleam00/context-engineering-intro">coleam00/context-engineering-intro</a></td>
+<td style="text-align: right;">13,881</td>
+<td style="text-align: right;">2,719</td>
+<td>MIT</td>
+<td>Context-engineering templates (PRP)</td>
+<td>partly</td>
+<td>L/L</td>
+</tr>
+<tr>
+<td>45</td>
+<td><a href="https://github.com/ccusage/ccusage">ccusage/ccusage</a></td>
+<td style="text-align: right;">19,031</td>
+<td style="text-align: right;">879</td>
+<td>NOASSERTION</td>
+<td>Token/cost usage from local agent logs</td>
+<td>yes (keelyard usage)</td>
+<td>-</td>
+</tr>
+<tr>
+<td>46</td>
+<td><a href="https://github.com/plandex-ai/plandex">plandex-ai/plandex</a></td>
+<td style="text-align: right;">15,747</td>
+<td style="text-align: right;">1,180</td>
+<td>MIT</td>
+<td>Agent for large tasks; sandboxed diffs reviewed before apply</td>
+<td>partly (rewind)</td>
+<td>L/M</td>
+</tr>
+<tr>
+<td>47</td>
+<td><a href="https://github.com/ast-grep/ast-grep">ast-grep/ast-grep</a></td>
+<td style="text-align: right;">16,250</td>
+<td style="text-align: right;">477</td>
+<td>MIT</td>
+<td>Structural (AST) code search and rewrite</td>
+<td>no (regex search)</td>
+<td>M/H</td>
+</tr>
+<tr>
+<td>48</td>
+<td><a href="https://github.com/BeehiveInnovations/pal-mcp-server">BeehiveInnovations/pal-mcp-server</a></td>
+<td style="text-align: right;">11,785</td>
+<td style="text-align: right;">1,035</td>
+<td>NOASSERTION</td>
+<td>Ask other models (second opinion) from your agent</td>
+<td>partly (swarm)</td>
+<td>L/M</td>
+</tr>
+<tr>
+<td>49</td>
+<td><a href="https://github.com/microsoft/LLMLingua">microsoft/LLMLingua</a></td>
+<td style="text-align: right;">6,756</td>
+<td style="text-align: right;">438</td>
+<td>MIT</td>
+<td>Learned prompt compression (drop low-information tokens)</td>
+<td>no (needs a model; risky for code)</td>
+<td>M/L</td>
+</tr>
+<tr>
+<td>50</td>
+<td><a href="https://github.com/disler/claude-code-hooks-mastery">disler/claude-code-hooks-mastery</a></td>
+<td style="text-align: right;">3,943</td>
+<td style="text-align: right;">632</td>
+<td>none</td>
+<td>Examples of every Claude Code hook</td>
+<td>yes (keelyard uses hooks)</td>
+<td>-</td>
+</tr>
+<tr>
+<td>51</td>
+<td><a href="https://github.com/graykode/abtop">graykode/abtop</a></td>
+<td style="text-align: right;">3,752</td>
+<td style="text-align: right;">341</td>
+<td>MIT</td>
+<td>htop for agent sessions: tokens, context %, rate limits</td>
+<td>partly (usage)</td>
+<td>L/L</td>
+</tr>
+<tr>
+<td>52</td>
+<td><a href="https://github.com/liaohch3/claude-tap">liaohch3/claude-tap</a></td>
+<td style="text-align: right;">3,289</td>
+<td style="text-align: right;">285</td>
+<td>MIT</td>
+<td>Intercept and inspect agent API traffic</td>
+<td>no</td>
+<td>L/L</td>
+</tr>
+<tr>
+<td>53</td>
+<td><a href="https://github.com/sourcegraph/zoekt">sourcegraph/zoekt</a></td>
+<td style="text-align: right;">1,969</td>
+<td style="text-align: right;">253</td>
+<td>Apache-2.0</td>
+<td>Trigram code search index</td>
+<td>no (git grep)</td>
+<td>L/L</td>
+</tr>
+<tr>
+<td>54</td>
+<td><a href="https://github.com/tickernelz/opencode-mem">tickernelz/opencode-mem</a></td>
+<td style="text-align: right;">1,758</td>
+<td style="text-align: right;">176</td>
+<td>MIT</td>
+<td>OpenCode memory with local vector DB</td>
+<td>partly (FTS memory)</td>
+<td>L/L</td>
+</tr>
+<tr>
+<td>55</td>
+<td><a href="https://github.com/vshulcz/deja-vu">vshulcz/deja-vu</a></td>
+<td style="text-align: right;">1,219</td>
+<td style="text-align: right;">125</td>
+<td>MIT</td>
+<td>Memory built from existing session history on disk</td>
+<td>yes (memory ingests Claude/Codex/OpenCode logs)</td>
+<td>-</td>
+</tr>
+<tr>
+<td>56</td>
+<td><a href="https://github.com/cased/kit">cased/kit</a></td>
+<td style="text-align: right;">1,308</td>
+<td style="text-align: right;">85</td>
+<td>MIT</td>
+<td>Toolkit: code maps, symbol extraction, context assembly</td>
+<td>partly</td>
+<td>L/M</td>
+</tr>
+<tr>
+<td>57</td>
+<td><a href="https://github.com/riponcm/projectmem">riponcm/projectmem</a></td>
+<td style="text-align: right;">865</td>
+<td style="text-align: right;">53</td>
+<td>MIT</td>
+<td>Records failed attempts/fixes and warns the agent before it repeats one</td>
+<td>no</td>
+<td>M/H</td>
+</tr>
+</tbody>
+</table>
+<h2 id="top-10-ideas-keelyard-lacked-ranked-by-source-popularity-estimated-value">Top 10 ideas keelyard lacked, ranked by source popularity × estimated value<a class="headerlink" href="#top-10-ideas-keelyard-lacked-ranked-by-source-popularity-estimated-value" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>#</th>
+<th>idea</th>
+<th>from</th>
+<th>status in keelyard</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td>Terse output rule: results only, code/errors kept exact</td>
+<td>caveman, SuperClaude</td>
+<td><strong>built</strong>: in every preset, opt out with <code>--no-terse</code>/<code>KEELYARD_TERSE=0</code>; measured in <code>bench/terse.py</code></td>
+</tr>
+<tr>
+<td>2</td>
+<td>Content-aware compression of JSON tool output</td>
+<td>headroom</td>
+<td><strong>built</strong>: lossless (minified, same-key lists as columns/rows), only when output is JSON and it is smaller</td>
+</tr>
+<tr>
+<td>3</td>
+<td>Warn before repeating a failed attempt</td>
+<td>projectmem</td>
+<td><strong>built</strong>: one hint, only when the same failure returns after a code change</td>
+</tr>
+<tr>
+<td>4</td>
+<td>Keep injected context byte-stable so the prompt cache stays warm</td>
+<td>headroom (cache alignment)</td>
+<td><strong>checked</strong>: test that the brief is deterministic and has no timestamps</td>
+</tr>
+<tr>
+<td>5</td>
+<td>Plan/state on disk re-injected after compaction</td>
+<td>planning-with-files, context-mode</td>
+<td>already built (<code>work_state</code>, previous round)</td>
+</tr>
+<tr>
+<td>6</td>
+<td>"Surgical changes, simplicity first" rules</td>
+<td>andrej-karpathy-skills</td>
+<td>not built: adds tokens every turn; quality effect not measurable here at $0</td>
+</tr>
+<tr>
+<td>7</td>
+<td>Graph-ranked repo map within a token budget</td>
+<td>aider</td>
+<td>not built yet; <code>find_symbol</code>/<code>related</code> cover lookups</td>
+</tr>
+<tr>
+<td>8</td>
+<td>Structural (AST) search</td>
+<td>ast-grep, serena</td>
+<td>not built: needs parsers per language</td>
+</tr>
+<tr>
+<td>9</td>
+<td>Up-to-date library docs on demand</td>
+<td>context7</td>
+<td>not built: network service, out of scope</td>
+</tr>
+<tr>
+<td>10</td>
+<td>Learn corrections from failed sessions into the rules file</td>
+<td>headroom learn</td>
+<td>not built: needs a model to summarise; revisit with the local model</td>
+</tr>
+</tbody>
+</table>
+
+
+
+
+
+
+
+  
+  
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+    
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+    <div class="md-copyright__highlight">
+      Apache-2.0 · Geist fonts under OFL-1.1
+    </div>
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": ["navigation.sections", "navigation.top", "content.code.copy", "search.highlight", "navigation.footer"], "search": "../../assets/javascripts/workers/search.a7633da7.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../../assets/javascripts/bundle.c21346df.min.js"></script>
+      
+    
+  </body>
+</html>

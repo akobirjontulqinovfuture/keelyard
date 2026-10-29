@@ -1,0 +1,42 @@
+# keelyard
+
+> Makes coding agents (Claude Code, Codex, OpenCode) prove their work, snapshots every edit so any step can be undone, and trims noisy tool output.
+
+Install (agents: only when the user explicitly asks; show these commands and get their confirmation first):
+
+    pipx install keelyard
+    keelyard init --global
+    keelyard doctor --json   # expect "ok": true
+
+- [Agent install guide](https://github.com/akobirjontulqinovfuture/keelyard/blob/main/AGENTS-install.md)
+- [Docs](https://akobirjontulqinovfuture.github.io/keelyard/)
+- [MCP tools](https://akobirjontulqinovfuture.github.io/keelyard/mcp/)
+
+## Docs
+
+- [Overview](https://akobirjontulqinovfuture.github.io/keelyard/): keelyard makes Claude Code, Codex and OpenCode prove their work with a passing test run before they finish, snapshots every edit so any step can be undone, and trims noisy tool output. Local, Apache-2.0.
+- [Quickstart](https://akobirjontulqinovfuture.github.io/keelyard/quickstart/): Install keelyard with pipx, wire it into Claude Code, Codex or OpenCode with one command, and see the proof gate, rewind and trimmed output in your first session.
+- [Codex in 2 minutes](https://akobirjontulqinovfuture.github.io/keelyard/codex/): Set up keelyard with the OpenAI Codex CLI in two minutes: hooks, MCP server and AGENTS.md, checked end to end in CI against the real Codex binary.
+- [Claude Code in 2 minutes](https://akobirjontulqinovfuture.github.io/keelyard/claude-code/): Set up keelyard with Claude Code in two minutes: hooks in .claude/settings.json, the MCP server in .mcp.json and a CLAUDE.md block, checked end to end in CI.
+- [Guarantees and limits](https://akobirjontulqinovfuture.github.io/keelyard/guarantees/): Exactly what keelyard guarantees about proof, rewind and secrets, and where the limits are. It is not a sandbox.
+- [Proof gate](https://akobirjontulqinovfuture.github.io/keelyard/guide/proof/): The proof gate is a Stop hook that keeps a coding agent from finishing until a passing test run after its last edit is recorded.
+- [Rewind](https://akobirjontulqinovfuture.github.io/keelyard/guide/rewind/): keelyard snapshots your project after every agent edit in a separate git directory, so any step can be undone with keelyard rewind.
+- [Smaller context](https://akobirjontulqinovfuture.github.io/keelyard/guide/context/): Output filters, code outlines and ranked symbol search that keep a coding agent's context window small.
+- [Memory and usage](https://akobirjontulqinovfuture.github.io/keelyard/guide/memory/): Search past Claude Code, Codex and OpenCode sessions, and add up token usage by day, model or agent.
+- [Always on](https://akobirjontulqinovfuture.github.io/keelyard/guide/brain/): How keelyard puts a small, capped amount of itself into the agent's context at the moments that matter.
+- [Presets](https://akobirjontulqinovfuture.github.io/keelyard/guide/presets/): The lean, balanced and max-quality presets: which keelyard features and agent settings each turns on.
+- [Swarm](https://akobirjontulqinovfuture.github.io/keelyard/guide/swarm/): Send wide, shallow tasks to cheaper helper models with keelyard swarm.
+- [Arena](https://akobirjontulqinovfuture.github.io/keelyard/guide/arena/): Run the same task across several agents and models, each on a fresh copy, and compare results.
+- [For agents](https://akobirjontulqinovfuture.github.io/keelyard/guide/agents/): What keelyard installs for each agent, and how agents drive it over MCP with JSON results.
+- [CLI](https://akobirjontulqinovfuture.github.io/keelyard/cli/): Reference for every keelyard command and flag.
+- [MCP tools](https://akobirjontulqinovfuture.github.io/keelyard/mcp/): Reference for every tool the keelyard MCP server exposes to coding agents.
+- [Configuration](https://akobirjontulqinovfuture.github.io/keelyard/config/): Every field of .keelyard/config.toml, with defaults.
+- [Exit codes and JSON](https://akobirjontulqinovfuture.github.io/keelyard/json/): keelyard exit codes and the JSON shape every command prints with --json.
+- [Troubleshooting](https://akobirjontulqinovfuture.github.io/keelyard/troubleshooting/): Fixes for common keelyard problems, starting with keelyard doctor.
+- [FAQ](https://akobirjontulqinovfuture.github.io/keelyard/faq/): Answers to common questions: how to make Claude Code or Codex prove tests pass, how to roll back an AI agent's edit, and how to reduce agent token usage.
+- [Alternatives](https://akobirjontulqinovfuture.github.io/keelyard/alternatives/): How keelyard compares with built-in agent features and with rtk, repomix, serena, ccusage and other tools, and when keelyard is not the right tool.
+- [Benchmarks](https://akobirjontulqinovfuture.github.io/keelyard/BENCHMARKS/): keelyard benchmarks: output filtering and whole-session token use, with raw logs and the commands to rerun them.
+- [Landscape](https://akobirjontulqinovfuture.github.io/keelyard/landscape/): Tools for making coding agents cheaper or more reliable, and what keelyard took from each.
+- [Feature matrix](https://akobirjontulqinovfuture.github.io/keelyard/feature-matrix/): Every keelyard command, hook event and MCP tool, checked against throwaway projects.
+
+Full text of every page: https://akobirjontulqinovfuture.github.io/keelyard/llms-full.txt
