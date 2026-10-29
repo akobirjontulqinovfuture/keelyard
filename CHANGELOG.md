@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- **Fix (project map):** `__pycache__/`, loose `.pyc`/`.pyo` files and cache directories (`.pytest_cache`, `.mypy_cache`, `.ruff_cache`, `node_modules`, ...) no longer appear in the session brief's project map, so bytecode cannot burn context tokens.
+
 ## 1.2.0 (Oct 29, 2026)
 
 Both big agents checked end to end in CI, and a tighter supply chain.
