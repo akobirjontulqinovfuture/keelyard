@@ -113,13 +113,20 @@ def tracked_files(root: Path) -> list[str]:
 
 
 AGENT_FILES = {".opencode", ".claude", ".codex", ".keelyard", "AGENTS.md", "CLAUDE.md", "opencode.json", ".mcp.json"}
+# Build outputs may still be committed on purpose (e.g. a build/ helper), so only caches are skipped here.
+CACHE_DIRS = VENDOR_DIRS - {"dist", "build", "target"}
+CACHE_SUFFIXES = (".pyc", ".pyo")
+
+
+def is_cache_artifact(rel: str) -> bool:
+    return rel.endswith(CACHE_SUFFIXES) or any(part in CACHE_DIRS for part in rel.split("/"))
 
 
 def project_map(root: Path, max_dirs: int = 60) -> str:
     dirs: dict[str, list[tuple[str, int]]] = OrderedDict()
     total = 0
     for rel in sorted(tracked_files(root)):
-        if rel.split("/")[0] in AGENT_FILES:
+        if rel.split("/")[0] in AGENT_FILES or is_cache_artifact(rel):
             continue
         p = root / rel
         try:

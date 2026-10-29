@@ -31,6 +31,19 @@ def test_find_symbol_and_map(project):
     assert "app.py" in codemap.project_map(project)
 
 
+def test_project_map_skips_bytecode_and_caches(project):
+    (project / "m.py").write_text("def f():\n    return 1\n")
+    cache = project / "__pycache__"
+    cache.mkdir()
+    (cache / "m.cpython-313.pyc").write_bytes(b"\x00\x01")
+    (project / "stale.pyc").write_bytes(b"\x00\x01")
+    (project / ".pytest_cache").mkdir()
+    (project / ".pytest_cache" / "CACHEDIR.TAG").write_text("x")
+    out = codemap.project_map(project)
+    assert "m.py" in out and "app.py" in out
+    assert "__pycache__" not in out and ".pyc" not in out and ".pytest_cache" not in out
+
+
 def test_usage_three_agents(tmp_path):
     cc = tmp_path / "c" / "p"
     cc.mkdir(parents=True)
