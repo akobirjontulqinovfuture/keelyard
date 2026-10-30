@@ -74,6 +74,27 @@ def test_never_grows():
     assert filter_output("git status", "tiny") == "tiny"
 
 
+def test_codex_string_tool_response_is_filtered_without_updated_tool_output(cfg, project, capsys, monkeypatch):
+    """Codex CLI 0.165 sends tool_response as text and rejects updatedToolOutput."""
+    import io
+    import json
+    import sys
+
+    big = "\n".join(f"tests/test_a.py::test_{i} PASSED" for i in range(300))
+    big += "\nFAILED tests/test_a.py::test_9 - boom\n= 1 failed, 299 passed ="
+    ev = {"session_id": "s", "cwd": str(project), "tool_name": "Bash", "tool_input": {"command": "pytest -v"},
+          "tool_response": big}
+    out = hooks.handle("PostToolUse", ev, cfg)
+    assert "FAILED tests/test_a.py::test_9" in out["hookSpecificOutput"]["updatedToolOutput"]["stdout"]
+    warn = {"systemMessage": "rm -rf", "hookSpecificOutput": {"hookEventName": "PreToolUse", "additionalContext": "rm -rf"}}
+    assert hooks._codex_output(warn) == warn  # brief and the destructive guard stay as Codex already accepts them
+    monkeypatch.setattr(sys, "stdin", io.StringIO(json.dumps(ev)))
+    assert hooks.main("codex", "PostToolUse") == 0
+    printed = json.loads(capsys.readouterr().out)
+    assert printed["continue"] is False and "updatedToolOutput" not in json.dumps(printed)
+    assert "FAILED tests/test_a.py::test_9" in printed["stopReason"] and len(printed["stopReason"]) < len(big) / 5
+
+
 def test_claude_bash_posttooluse_replaces_output(cfg, project):
     big = "\n".join(f"tests/test_a.py::test_{i} PASSED" for i in range(300))
     big += "\nFAILED tests/test_a.py::test_9 - boom\n= 1 failed, 299 passed ="

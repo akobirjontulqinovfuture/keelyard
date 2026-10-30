@@ -68,10 +68,10 @@ It is not a sandbox. This page lists exactly what holds and where the limits are
 | evidence from shell test runs | command-succeeded | command-succeeded | command-succeeded |
 | `proof test` / `proof_run_tests` | test-verified | test-verified | test-verified (MCP off in lean: use the CLI) |
 | snapshot after each edit | yes | yes | yes |
-| shell output filtered in place | yes (`updatedToolOutput`) | sent the same way; not yet confirmed in a real Codex session | yes (plugin rewrites the output) |
+| shell output filtered in place | yes (`updatedToolOutput`) | yes (`continue: false` / `stopReason`; Codex 0.165.0 rejects `updatedToolOutput`) | yes (plugin rewrites the output) |
 | `[mcp].tools = "lazy"` (tool_search/tool_call) | yes | yes | only with MCP on |
 | work state in the brief after compaction | yes (SessionStart `compact`) | at session start; re-sent after compaction not confirmed | yes (plugin compaction hook) |
 | MCP tools | `.mcp.json` | `~/.codex/config.toml` or `--codex-project-mcp` | off by default (`KEELYARD_OPENCODE_MCP=1`) |
-| checked how | scripted hook payloads in CI (`keelyard selftest`) | scripted hook payloads in CI | real sessions, OpenCode 2.0.22 on Windows 11 |
+| checked how | scripted hook payloads in CI (`keelyard selftest`) | Codex CLI 0.165.0 plus scripted payloads | real sessions, OpenCode 2.0.22 on Windows 11 |
 
 Real Claude Code and Codex sessions have not been benchmarked yet.

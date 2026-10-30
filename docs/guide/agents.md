@@ -53,3 +53,22 @@ trust the project. keelyard never writes either without asking:
 
 `keelyard doctor` warns if Codex hooks are wired but neither file has the server. `keelyard uninstall codex`
 removes the block and deletes the file if nothing else was in it.
+
+### Codex CLI
+
+Checked on Codex CLI 0.165.0 (`@openai/codex`). `.codex/hooks.json` uses Codex's own shape: a top-level `hooks`
+object, then the event, then a matcher group, then `{type: command}`. Hooks are on by default. Project hooks
+load only after you trust the project, and each command must be approved once with `/hooks`.
+
+On that version a real session did this:
+
+- `SessionStart` added the keelyard brief as developer context.
+- `PreToolUse` for `rm -rf build` warned that `rm -rf` is destructive and named the snapshot to rewind to.
+  Codex also refuses `rm -f` style commands itself, before they run.
+- A shell command that changed a file was snapshotted, and `keelyard status` listed that step.
+- `Stop` with `decision: block` kept the turn open when proof was missing.
+
+Shell output is a string (`tool_response`), not Claude's `{stdout, stderr}` object. Codex rejects
+`updatedToolOutput` and reports `PostToolUse Failed`. keelyard therefore sends a filtered result as
+`continue: false` and `stopReason`. Codex replaces the tool result the model sees and reports
+`PostToolUse Stopped`. `apply_patch` carries the patch in `tool_input.command`.
