@@ -1,0 +1,52 @@
+name: codex-review
+# Codex reviews each same-repo pull request and posts one comment (openai/codex-action).
+# Needs the OPENAI_API_KEY repository secret; without it the job is skipped, so forks and CI stay green.
+on:
+  pull_request:
+    types: [opened, ready_for_review]
+permissions:
+  contents: read
+jobs:
+  codex:
+    if: github.event.pull_request.head.repo.full_name == github.repository && !github.event.pull_request.draft
+    runs-on: ubuntu-latest
+    outputs:
+      final_message: ${{ steps.run_codex.outputs.final-message }}
+    env:
+      HAS_KEY: ${{ secrets.OPENAI_API_KEY != '' }}
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        if: env.HAS_KEY == 'true'
+        with:
+          ref: refs/pull/${{ github.event.pull_request.number }}/merge
+          persist-credentials: false
+      - if: env.HAS_KEY == 'true'
+        env:
+          PR_BASE_REF: ${{ github.event.pull_request.base.ref }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+        run: git fetch --no-tags origin "$PR_BASE_REF" "+refs/pull/$PR_NUMBER/head"
+      - id: run_codex
+        if: env.HAS_KEY == 'true'
+        uses: openai/codex-action@bdf19a4a223ec2549a3e2274a0cf61556bc07675 # v1.13
+        with:
+          openai-api-key: ${{ secrets.OPENAI_API_KEY }}
+          permission-profile: ":workspace"
+          prompt: |
+            Review pull request #${{ github.event.pull_request.number }} of ${{ github.repository }}.
+            Only the changes in: git diff ${{ github.event.pull_request.base.sha }}...${{ github.event.pull_request.head.sha }}
+            Read AGENTS.md first. Report real bugs, missing tests and broken invariants, most important first.
+            Be concise; say "No blocking issues." if there are none.
+  comment:
+    needs: codex
+    if: needs.codex.outputs.final_message != ''
+    runs-on: ubuntu-latest
+    permissions:
+      pull-requests: write
+    steps:
+      - uses: actions/github-script@f28e40c7f34bde8b3046d885e986cb6290c5673b # v7.1.0
+        env:
+          BODY: ${{ needs.codex.outputs.final_message }}
+        with:
+          script: |
+            await github.rest.issues.createComment({owner: context.repo.owner, repo: context.repo.repo,
+              issue_number: context.payload.pull_request.number, body: "**Codex review**\n\n" + process.env.BODY});

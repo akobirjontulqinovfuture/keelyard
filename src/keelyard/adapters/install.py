@@ -50,12 +50,18 @@ class InstallError(RuntimeError):
 
 
 def _read_json(path: Path) -> dict:
-    if not path.exists() or not path.read_text(encoding="utf-8").strip():
+    if not path.exists():
         return {}
     try:
-        data = json.loads(path.read_text(encoding="utf-8"))
-    except ValueError as e:
+        text = path.read_text(encoding="utf-8")
+        if not text.strip():
+            return {}
+        data = json.loads(text)
+    except json.JSONDecodeError as e:
         raise InstallError(f"{path} is not valid JSON ({e.msg}, line {e.lineno}). "
+                           "Hint: fix or remove that file, then run `keelyard init` again. Nothing was changed.") from None
+    except UnicodeDecodeError:
+        raise InstallError(f"{path} is not UTF-8 text. "
                            "Hint: fix or remove that file, then run `keelyard init` again. Nothing was changed.") from None
     if not isinstance(data, dict):
         raise InstallError(f"{path} must contain a JSON object. Hint: fix it, then run `keelyard init` again.")

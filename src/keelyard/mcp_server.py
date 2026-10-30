@@ -43,6 +43,9 @@ read_file(ranges) -> edit (auto-snapshotted; rewind_to undoes) -> run_compact ->
 -> proof_check each item -> proof_status proven. Step-by-step guides: workflow("plan"|"debug"|"review")."""
 
 mcp = _Server("keelyard", instructions=INSTRUCTIONS)
+for _attr in ("_lowlevel_server", "_mcp_server"):  # report keelyard's version in the MCP handshake (serverInfo)
+    if hasattr(mcp, _attr):
+        getattr(mcp, _attr).version = __version__
 
 
 def _ann(title: str, read_only: bool = False, destructive: bool = False, idempotent: bool = False, open_world: bool = False):
@@ -220,7 +223,7 @@ def outline(
 ) -> dict[str, Any]:
     """Signatures and classes with line numbers. Read this before reading a whole file."""
     cfg, sid = _ctx()
-    out = {"path": path, "outline": _outline(ReadCache(cfg, sid).resolve(path))}
+    out: dict[str, object] = {"path": path, "outline": _outline(ReadCache(cfg, sid).resolve(path))}
     if related:
         from .codemap import related as _related
 
@@ -291,6 +294,7 @@ async def swarm(
     ts = [Task(kind=t.get("kind", "ask"), prompt=t.get("prompt", ""), files=list(t.get("files", [])),
                symbols=list(t.get("symbols", []))) for t in tasks]
     coop = bool(cfg.section("swarm").get("cooperative", True))
+    sw: Swarm | None
     try:
         if coop:
             from .coop import Coop
@@ -306,7 +310,9 @@ async def swarm(
                 "subagent_tasks": subagent_tasks(cfg, ts)}
     results = await sw.run(ts)
     extra = {}
-    if coop:
+    from .coop import Coop as _Coop
+
+    if isinstance(sw, _Coop):
         from .coop import summary
 
         extra = summary(sw, results)

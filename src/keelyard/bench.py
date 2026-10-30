@@ -13,6 +13,7 @@ import json
 import statistics
 import time
 from pathlib import Path
+from typing import Any
 
 from .config import Config
 from .memory import Memory, default_sources
@@ -21,7 +22,7 @@ from .snapshot import Shadow
 
 
 def bench_compress(corpus: Path) -> dict:
-    rows = []
+    rows: list[dict[str, Any]] = []
     for f in sorted(corpus.glob("*.log")):
         raw = f.read_text(errors="replace", encoding="utf-8")
         small = compress_output(raw)
@@ -55,8 +56,9 @@ def bench_reads() -> dict:
                     continue
                 if part.get("type") == "tool_use" and part.get("name") == "Read":
                     inp = part.get("input") or {}
-                    if not inp.get("offset") and not inp.get("limit"):
-                        pending[part.get("id")] = inp.get("file_path", "")
+                    use_id = part.get("id")
+                    if isinstance(use_id, str) and not inp.get("offset") and not inp.get("limit"):
+                        pending[use_id] = inp.get("file_path", "")
                 elif part.get("type") == "tool_result" and part.get("tool_use_id") in pending:
                     path = pending.pop(part["tool_use_id"])
                     body = part.get("content")
@@ -127,7 +129,7 @@ def run_all(cfg: Config) -> dict:
     corpus = Path(__file__).resolve().parents[2] / "bench" / "corpus"
     mem = Memory()
     mem.ingest()
-    res = {"compress": bench_compress(corpus), "reads": bench_reads(), "memory": bench_memory(mem),
+    res: dict[str, Any] = {"compress": bench_compress(corpus), "reads": bench_reads(), "memory": bench_memory(mem),
            "snapshot": bench_snapshot(cfg)}
     lines = ["keelyard bench (approx tokens = chars/4)"]
     for k, v in res.items():

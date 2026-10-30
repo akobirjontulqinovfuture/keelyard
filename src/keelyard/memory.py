@@ -67,6 +67,10 @@ def read_claude(path: Path) -> Iterator[Turn]:
                        j["message"].get("role", j["type"]), text)
 
 
+_CODEX_INJECTED = ("<environment_context>", "# AGENTS.md instructions", "<user_instructions>", "<INSTRUCTIONS>",
+                   "<hook_prompt", "<permissions instructions>", "<user_shell_command>")
+
+
 def read_codex(path: Path) -> Iterator[Turn]:
     session, cwd = path.stem, ""
     for line in path.read_text(errors="replace", encoding="utf-8").splitlines():
@@ -82,7 +86,11 @@ def read_codex(path: Path) -> Iterator[Turn]:
             continue
         if p.get("type") == "message":
             text = _flatten(p.get("content"))
-            if text.strip() and not text.lstrip().startswith("<environment_context>"):
+            # Codex stores its own system prompt (developer role) and injected context (AGENTS.md, environment,
+            # hook prompts) as messages too; none of that is something the user or the agent said.
+            if p.get("role") not in ("user", "assistant") or text.lstrip().startswith(_CODEX_INJECTED):
+                continue
+            if text.strip():
                 yield Turn("codex", session, cwd, j.get("timestamp", ""), p.get("role", ""), text)
         elif p.get("type") == "function_call":
             yield Turn("codex", session, cwd, j.get("timestamp", ""), "tool",
@@ -272,7 +280,8 @@ class Memory:
         sql += " ORDER BY bm25(fts) LIMIT ?"
         args.append(500)  # total is reported as "500+" beyond this
         rows = self.db.execute(sql, args).fetchall()
-        out, used = [], 0
+        out: list[dict] = []
+        used = 0
         for agent, session, proj, ts, role, snip in rows[offset:]:
             if len(out) >= limit:
                 break

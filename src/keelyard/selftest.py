@@ -187,9 +187,10 @@ def run(keep: bool = False) -> Report:
         try:
             asyncio.run(_agent(proj, env, rep))
         except Exception as e:  # noqa: BLE001
-            while isinstance(e, BaseExceptionGroup) and e.exceptions:
-                e = e.exceptions[0]
-            rep.checks.append(Check("selftest aborted", False, f"{type(e).__name__}: {e}"[:400]))
+            err: BaseException = e
+            while isinstance(err, BaseExceptionGroup) and err.exceptions:
+                err = err.exceptions[0]
+            rep.checks.append(Check("selftest aborted", False, f"{type(err).__name__}: {err}"[:400]))
     finally:
         srv.shutdown()
         if not keep:

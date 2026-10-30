@@ -10,6 +10,7 @@ import argparse
 import asyncio
 import dataclasses
 import datetime as dt
+import io
 import json
 import shlex
 import sys
@@ -46,6 +47,7 @@ more:
   install/uninstall wire or unwire one agent by hand
   filter            compact output piped on stdin
   recall            print the full output that `run` shortened
+  state             compact work state: requirements, decisions, changes, open questions
 """
 
 EXAMPLES = {
@@ -193,7 +195,8 @@ def _parser() -> argparse.ArgumentParser:
     x.add_argument("id", type=int)
     x.add_argument("evidence")
     x = r.add_parser("test", help="run the test command and record the result")
-    x.add_argument("phase", choices=["before", "after"])
+    x.add_argument("phase", nargs="?", choices=["before", "after"], default="after",
+                   help="before or after the change (default: after)")
     x.add_argument("--cmd", dest="test_cmd", help="override [proof].test_cmd")
     x = r.add_parser("shot", help="screenshot the app")
     x.add_argument("url", nargs="?")
@@ -293,7 +296,8 @@ def _do_global(a, remove: bool):
     agents = [a.agent] if getattr(a, "agent", None) else list(AGENTS)
     if isinstance(getattr(a, "agent", None), list):
         agents = a.agent
-    data = {"global": True, "agents": agents, "changed": {}, "detected": detect()}
+    changed: dict[str, list[str]] = {}
+    data = {"global": True, "agents": agents, "changed": changed, "detected": detect()}
     h = _human(a)
     if h:
         ui.heading("keelyard uninstall --global" if remove else "keelyard init --global", "all projects of this user")
@@ -302,7 +306,7 @@ def _do_global(a, remove: bool):
             files = uninstall_global(x) if remove else install_global(x, terse=None if getattr(a, "terse", True) else False)
         except InstallError as e:
             raise Fail(str(e)) from None
-        data["changed"][x] = files
+        changed[x] = files
         if h:
             ui.line("ok", x, ", ".join(ui.tilde(f) for f in files) or "nothing to remove")
     if h and not remove:
@@ -421,6 +425,7 @@ def _checks() -> list[tuple[str, str, str, str]]:
     root = config.find_root()
     rows.append(("project", "ok", "root", ui.tilde(root)))
     cfg = None
+    has = False
     try:
         cfg = config.load(root)
         has = (root / ".keelyard" / "config.toml").exists()
@@ -440,7 +445,8 @@ def _checks() -> list[tuple[str, str, str, str]]:
         if (sh.gitdir / "HEAD").exists():
             try:
                 sh._git("rev-parse", "--verify", "-q", "refs/heads/timeline")
-                rows.append(("project", "ok", "timeline", f"{len(sh.steps())} steps"))
+                n_steps = len(sh.steps())
+                rows.append(("project", "ok", "timeline", f"{n_steps} step{'s' * (n_steps != 1)}"))
             except Exception as e:  # noqa: BLE001
                 rows.append(("project", "bad", "timeline", f"{e}. Hint: move .keelyard/shadow.git aside and run `keelyard rewind snap`"))
         else:
@@ -451,7 +457,7 @@ def _checks() -> list[tuple[str, str, str, str]]:
             rows.append(("project", "warn", "hook errors", f"see .keelyard/hook.log ({last})"))
         if cfg.raw.get("models", {}).get("strong", {}).get("model") == "set-me":
             rows.append(("project", "skip", "models.strong", "not set (only swarm/route use it)"))
-    if has:
+    if has and cfg is not None:
         from .proof import gate_status
 
         g = gate_status(cfg)
@@ -1031,12 +1037,16 @@ def _print_json(data) -> None:
 
 def main(argv: list[str] | None = None) -> int:
     for stream in (sys.stdin, sys.stdout, sys.stderr):  # Windows pipes default to cp1252: → … and non-Latin text break
+        if not isinstance(stream, io.TextIOWrapper):
+            continue
         try:
             stream.reconfigure(encoding="utf-8", errors="replace")
-        except (AttributeError, ValueError):
+        except ValueError:
             pass
     ap = _parser()
-    argv = sys.argv[1:] if argv is None else argv
+    argv = list(sys.argv[1:] if argv is None else argv)
+    if argv[:1] == ["--json"] and len(argv) > 1:  # `keelyard --json status` == `keelyard status --json`
+        argv = [argv[1], "--json", *argv[2:]]
     want_json = "--json" in argv[:argv.index("--")] if "--" in argv else "--json" in argv
     try:
         a = ap.parse_args(argv)

@@ -1,5 +1,9 @@
 # Benchmarks
 
+!!! tip "Rerun them yourself"
+    `make bench` (offline, $0) and `make codex-e2e` reproduce these numbers and the Codex check. Commands and
+    methodology: [BENCHMARKS.md in the repo](https://github.com/akobirjontulqinovfuture/keelyard/blob/main/BENCHMARKS.md#rerun-everything-in-one-command).
+
 Machine: 8 vCPU Linux box, no GPU, Python 3.13. Measured on 2026-10-12. Token counts are `chars / 4`.
 
 ## Terse-output rule, measured on local models (Oct 17, 2026)

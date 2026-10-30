@@ -107,7 +107,7 @@ def test_scripted_agent_installs_from_readme_alone(home, tmp_path):
     assert m, "README needs an agent install section"
     block = re.search(r"```(?:sh|bash)\n(.*?)```", m.group(1), re.S).group(1)
     cmds = [c.strip() for c in block.splitlines() if c.strip() and not c.strip().startswith("#")]
-    assert any("install" in c and "github.com/akobirjontulqinovfuture/keelyard" in c for c in cmds)
+    assert any(re.search(r"\b(pipx|pip) install( --user)? keelyard\b", c) for c in cmds)
     ran = []
     for c in cmds:
         if c.split()[0] in ("pipx", "pip", "uv", "python", "py"):
@@ -118,3 +118,8 @@ def test_scripted_agent_installs_from_readme_alone(home, tmp_path):
         assert r.returncode == 0, (c, r.stdout, r.stderr)
     assert "keelyard init --global" in ran and any(c.startswith("keelyard doctor") for c in ran)
     assert (home / ".claude" / "settings.json").exists()
+
+
+def test_json_flag_works_before_the_command(home):
+    d = json.loads(ky("--json", "doctor", cwd=home).stdout)
+    assert "checks" in d

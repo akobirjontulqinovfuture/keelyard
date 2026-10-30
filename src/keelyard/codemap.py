@@ -219,7 +219,8 @@ def references(root: Path, name: str) -> list[str]:
         return []
     word = re.compile(rf"(?<![\w.]){re.escape(short)}\b|\.{re.escape(short)}\b")
     defn = re.compile(rf"^\s*(export\s+)?(async\s+)?(def|class|function|fn|func|struct|interface|type)\s+{re.escape(short)}\b")
-    src, tests = [], []
+    src: list[str] = []
+    tests: list[str] = []
     for rel in _code_files(root):
         for i, ln in enumerate(_lines(root, rel), 1):
             if short in ln and word.search(ln) and not defn.search(ln) and not ln.lstrip().startswith(("#", "//")):

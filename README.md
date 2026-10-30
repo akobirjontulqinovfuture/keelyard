@@ -1,26 +1,69 @@
+<!-- mcp-name: io.github.akobirjontulqinovfuture/keelyard -->
+
 <div align="center">
 
-# keelyard
+<a href="https://github.com/akobirjontulqinovfuture/keelyard">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akobirjontulqinovfuture/keelyard/main/assets/brand/hero-dark.png">
+    <img src="https://raw.githubusercontent.com/akobirjontulqinovfuture/keelyard/main/assets/brand/hero-light.png" alt="keelyard: coding agents prove their work before they say done" width="760">
+  </picture>
+</a>
 
-**Your coding agent has to show its work before it can say "done".**<br>
-Every edit is snapshotted, so any step can be undone. Logs are trimmed before they eat the context window.
+**Make Claude Code, Codex and OpenCode prove their work, undo any step, and use fewer tokens.**
 
-[![CI](https://github.com/akobirjontulqinovfuture/keelyard/actions/workflows/ci.yml/badge.svg)](https://github.com/akobirjontulqinovfuture/keelyard/actions/workflows/ci.yml)
-[![PyPI](https://img.shields.io/pypi/v/keelyard?color=111111)](https://pypi.org/project/keelyard/)
-[![License](https://img.shields.io/badge/license-Apache--2.0-111111)](LICENSE)
-![Python](https://img.shields.io/badge/python-3.11%20%E2%80%93%203.13-111111)
-![Agents](https://img.shields.io/badge/agents-Claude%20Code%20%C2%B7%20Codex%20%C2%B7%20OpenCode-1F6F4A)
-![Status](https://img.shields.io/badge/status-stable-1F6F4A)
+[![PyPI](https://img.shields.io/pypi/v/keelyard?color=111111&label=pypi)](https://pypi.org/project/keelyard/)
+[![Python](https://img.shields.io/pypi/pyversions/keelyard?color=111111)](https://pypi.org/project/keelyard/)
+[![CI](https://img.shields.io/github/actions/workflow/status/akobirjontulqinovfuture/keelyard/ci.yml?branch=main&label=ci&color=178A52)](https://github.com/akobirjontulqinovfuture/keelyard/actions/workflows/ci.yml)
+[![Codex e2e](https://img.shields.io/github/actions/workflow/status/akobirjontulqinovfuture/keelyard/codex-e2e.yml?branch=main&label=codex%20e2e&color=178A52)](https://github.com/akobirjontulqinovfuture/keelyard/actions/workflows/codex-e2e.yml)
+[![Claude Code e2e](https://img.shields.io/github/actions/workflow/status/akobirjontulqinovfuture/keelyard/claude-e2e.yml?branch=main&label=claude%20code%20e2e&color=178A52)](https://github.com/akobirjontulqinovfuture/keelyard/actions/workflows/claude-e2e.yml)
+[![OpenSSF Scorecard](https://api.scorecard.dev/projects/github.com/akobirjontulqinovfuture/keelyard/badge)](https://scorecard.dev/viewer/?uri=github.com/akobirjontulqinovfuture/keelyard)
+[![License](https://img.shields.io/badge/license-Apache--2.0-111111)](https://github.com/akobirjontulqinovfuture/keelyard/blob/main/LICENSE)
 
-<img src="docs/img/hero.gif" alt="keelyard in a terminal: init, the proof gate stopping an agent that deleted tests, rewind, then proven" width="760">
+[Quickstart](#quickstart-30-seconds) · [Codex](#works-with-codex) · [Why](#why) · [What it does](#what-it-does) · [Docs](https://akobirjontulqinovfuture.github.io/keelyard/) · [FAQ](https://akobirjontulqinovfuture.github.io/keelyard/faq/) · [Benchmarks](https://github.com/akobirjontulqinovfuture/keelyard/blob/main/BENCHMARKS.md) · [Roadmap](https://github.com/akobirjontulqinovfuture/keelyard/blob/main/ROADMAP.md)
+
+<img src="https://raw.githubusercontent.com/akobirjontulqinovfuture/keelyard/main/docs/img/hero.gif" alt="keelyard in a terminal: init, the proof gate stopping an agent that deleted tests, rewind, then proven" width="760">
 
 </div>
+
+keelyard is an open-source command-line tool and MCP server that stops AI coding agents (Claude Code, Codex CLI,
+OpenCode) from finishing until a passing test run proves their work, snapshots every edit so any step can be undone,
+and trims noisy tool output so sessions use fewer tokens. It runs locally, with no telemetry.
+
+## Why
+
+Coding agents are fast, but they end sessions with "done" while tests are still red, and sometimes they delete
+the test that was failing. keelyard sits between the agent and your repo:
+
+- it **won't let the session end** until the tests pass on the files as they are now;
+- it **snapshots every edit**, so a bad step is one `keelyard rewind to <n>` away;
+- it **trims noisy output** so the context window holds errors, not 3,000 passing lines.
+
+Local only, no telemetry, Apache-2.0.
+
+## Works with Codex
+
+```bash
+pipx install keelyard && cd your-project
+keelyard init --agent codex --codex-project-mcp
+codex
+```
+
+`init` writes the hooks, the MCP server entry and an AGENTS.md block; in Codex, type `/hooks` once to trust the
+hooks. Codex then works as usual. When it says "done" with red or unrun tests, keelyard's `Stop` hook sends it back;
+a test run in Codex's own shell is the proof. Every edit is snapshotted, so `keelyard rewind to <n>` undoes a bad step.
+Checked on **Codex CLI 0.165.0** by [`scripts/codex_e2e.py`](https://github.com/akobirjontulqinovfuture/keelyard/blob/main/scripts/codex_e2e.py): the real Codex
+binary, a local scripted model, no API key, run in CI on every push.
+**[Codex in 2 minutes →](https://akobirjontulqinovfuture.github.io/keelyard/codex/)**
+
+**Works with Claude Code:** `keelyard init --agent claude` writes `.claude/settings.json` hooks, `.mcp.json` and a
+CLAUDE.md block. Checked on Claude Code 2.1.197 by [`scripts/claude_e2e.py`](https://github.com/akobirjontulqinovfuture/keelyard/blob/main/scripts/claude_e2e.py) in CI on every push, no API key. **[Claude Code in 2 minutes →](https://akobirjontulqinovfuture.github.io/keelyard/claude-code/)** (OpenCode works too)
+
 
 <!-- agent-install:start -->
 ## Install
 
 ```sh
-pipx install git+https://github.com/akobirjontulqinovfuture/keelyard   # or from PyPI: pipx install keelyard
+pipx install keelyard   # or: python -m pip install --user keelyard
 keelyard init --global
 keelyard doctor --json
 ```
@@ -31,12 +74,12 @@ keelyard doctor --json
 - Undo: `keelyard uninstall --global`.
 
 **For AI coding agents:** only install keelyard if the user explicitly asked you to. Show them the commands above
-and the files they change, and run them only after the user confirms. Details: [AGENTS-install.md](AGENTS-install.md).
+and the files they change, and run them only after the user confirms. Details: [AGENTS-install.md](https://github.com/akobirjontulqinovfuture/keelyard/blob/main/AGENTS-install.md).
 <!-- agent-install:end -->
 
 In the recording, the agent deletes three tests to get a green run and then tries to stop. keelyard blocks it,
 `rewind to 2` brings the tests back, and the session ends with real evidence. Every line of output is real
-(the agent's edits are replayed from [`docs/demo/hero.sh`](docs/demo/hero.sh)).
+(the agent's edits are replayed from [`docs/demo/hero.sh`](https://github.com/akobirjontulqinovfuture/keelyard/blob/main/docs/demo/hero.sh)).
 
 ## Quickstart (30 seconds)
 
@@ -54,9 +97,12 @@ gives your config files back byte for byte. Latest `main` instead of the PyPI re
 > **Real runs (OpenCode 2, Windows, free model, $0):** with the lean preset, mean input tokens per session fell
 > **14.2×** on a noisy 1,566-test task and **6.0×** on a small 66-test task (5 baseline vs 3 lean runs, all tests
 > passing). Uncached input alone: 9.5× and 4.5×. Lean turns some agent tools off. No cost claim: the model was free.
-> [BENCHMARKS.md](BENCHMARKS.md#lean-preset-v2-repeated-runs-oct-15-2026)
+> [BENCHMARKS.md](https://github.com/akobirjontulqinovfuture/keelyard/blob/main/BENCHMARKS.md#lean-preset-v2-repeated-runs-oct-15-2026)
 
 ## What keelyard changes on your machine
+
+<details>
+<summary>Files it touches, network use, and how to uninstall</summary>
 
 - **Only when you run `keelyard init` / `install <agent>`** (project) or **`keelyard init --global`** (user level).
   Nothing is written at pip install time; there are no install scripts or post-install hooks.
@@ -70,6 +116,8 @@ gives your config files back byte for byte. Latest `main` instead of the PyPI re
 - **Uninstall:** `keelyard uninstall <agent>` (project) or `keelyard uninstall --global`, then
   `pipx uninstall keelyard` and delete `.keelyard/` if you want the snapshots gone.
 
+</details>
+
 ## What it does
 
 - **Proof gate.** An agent that changed files cannot finish until the tests pass **on the current files**.
@@ -79,7 +127,7 @@ gives your config files back byte for byte. Latest `main` instead of the PyPI re
   `keelyard rewind to <n>` is itself undoable, backs up files snapshots can't hold, and survives being interrupted.
   Secrets (`.env`, keys) are never snapshotted.
 - **Smaller context.** Filters for test runners, git, linters and search keep every error, warning and `file:line`
-  ([tested on real logs](tests/corpus/)). JSON output is compacted losslessly. Re-reading an unchanged file costs one line.
+  ([tested on real logs](https://github.com/akobirjontulqinovfuture/keelyard/tree/main/tests/corpus)). JSON output is compacted losslessly. Re-reading an unchanged file costs one line.
   The agent is told to answer with results only (opt out: `--no-terse`).
 - **Memory, usage, swarm, arena.** Search past sessions of all three agents, see token use from local logs,
   send small checked tasks to a free/cheap model, compare agents on one task.
@@ -103,7 +151,7 @@ gives your config files back byte for byte. Latest `main` instead of the PyPI re
 
 `keelyard init` writes these for you; `keelyard doctor` checks them.
 
-**Read [what keelyard guarantees and what it doesn't](docs/guarantees.md)** before you rely on it. In short:
+**Read [what keelyard guarantees and what it doesn't](https://github.com/akobirjontulqinovfuture/keelyard/blob/main/docs/guarantees.md)** before you rely on it. In short:
 snapshots undo files, not databases, migrations or deployed services; proof is only as good as your tests.
 
 ## For agents and scripts
@@ -113,10 +161,13 @@ and slash commands. Every CLI command takes `--json`; exit codes: `0` ok, `1` er
 
 ## Docs
 
-[Documentation](docs/index.md): one page per module, CLI and MCP reference, config, troubleshooting,
-[benchmarks](BENCHMARKS.md), [per-agent capabilities](docs/guarantees.md#per-agent).
+[Documentation](https://github.com/akobirjontulqinovfuture/keelyard/blob/main/docs/index.md): one page per module, CLI and MCP reference, config, troubleshooting,
+[benchmarks](https://github.com/akobirjontulqinovfuture/keelyard/blob/main/BENCHMARKS.md), [per-agent capabilities](https://github.com/akobirjontulqinovfuture/keelyard/blob/main/docs/guarantees.md#per-agent).
 
 ## Inspirations
+
+<details>
+<summary>Projects whose ideas shaped keelyard (no code copied)</summary>
 
 Ideas, not code: everything in keelyard is written from scratch. Thanks to
 [rtk](https://github.com/rtk-ai/rtk) (filtered command output),
@@ -127,10 +178,12 @@ Ideas, not code: everything in keelyard is written from scratch. Thanks to
 [context-mode](https://github.com/mksglu/context-mode) (state that survives compaction),
 [aider](https://github.com/Aider-AI/aider) (repo map), [claude-mem](https://github.com/thedotmack/claude-mem)
 (session memory), [ccusage](https://github.com/ccusage/ccusage) (usage from local logs) and
-[cline](https://github.com/cline/cline) (checkpoints). Survey: [docs/research/ideas.md](docs/research/ideas.md).
+[cline](https://github.com/cline/cline) (checkpoints). Survey: [docs/research/ideas.md](https://github.com/akobirjontulqinovfuture/keelyard/blob/main/docs/research/ideas.md).
+
+</details>
 
 ## Contributing
 
-Read [CONTRIBUTING.md](CONTRIBUTING.md) and the [roadmap](ROADMAP.md). Issues labeled
+Read [CONTRIBUTING.md](https://github.com/akobirjontulqinovfuture/keelyard/blob/main/CONTRIBUTING.md) and the [roadmap](https://github.com/akobirjontulqinovfuture/keelyard/blob/main/ROADMAP.md). Issues labeled
 [good first issue](https://github.com/akobirjontulqinovfuture/keelyard/labels/good%20first%20issue) are a good start. Real command logs for the filter corpus are especially welcome.
-Security issues: [SECURITY.md](SECURITY.md). Apache-2.0; third-party notices in [NOTICE](NOTICE).
+Security issues: [SECURITY.md](https://github.com/akobirjontulqinovfuture/keelyard/blob/main/SECURITY.md). Apache-2.0; third-party notices in [NOTICE](https://github.com/akobirjontulqinovfuture/keelyard/blob/main/NOTICE).

@@ -1,6 +1,81 @@
 # Changelog
 
-## 1.0.0 (unreleased, first PyPI release)
+## 1.2.1 (Oct 29, 2026)
+
+Listing metadata only, no code changes.
+- `server.json` for the official MCP Registry (`io.github.akobirjontulqinovfuture/keelyard`, PyPI, stdio via `keelyard mcp`)
+  and the `mcp-name` ownership marker in the README.
+- `glama.json` with the maintainer for the Glama MCP directory.
+
+## 1.2.0 (Oct 29, 2026)
+
+Both big agents checked end to end in CI, and a tighter supply chain.
+- **Claude Code e2e in CI:** `scripts/claude_e2e.py` runs the real Claude Code CLI against a local scripted model
+  (no key, $0): hooks, MCP tools, CLAUDE.md, the proof gate blocking and opening, `status`, `rewind`. 11 checks,
+  on every push and weekly (`claude-e2e` workflow, `make claude-e2e`).
+- **Codex PR review:** `codex-review` workflow reviews same-repo pull requests with `openai/codex-action`
+  (skipped when no `OPENAI_API_KEY` secret is set).
+- **Supply chain:** OpenSSF Scorecard workflow and badge, build provenance attestations for release files,
+  Dependabot for actions and pip, CODEOWNERS, CodeQL (Python and Actions), every GitHub Action pinned to a commit
+  SHA, least-privilege workflow tokens, private vulnerability reporting on and a fuller SECURITY.md.
+- **CI:** coverage job (gate at 70%; 76% today) and the `examples/demo.sh` session replay run on every push;
+  docs deploy on every push to main.
+- **Docs findability:** per-page descriptions, canonical URLs, OpenGraph/Twitter cards, JSON-LD
+  (SoftwareApplication, FAQPage), sitemap.xml, robots.txt, llms.txt and llms-full.txt on the docs site; new
+  [FAQ](https://akobirjontulqinovfuture.github.io/keelyard/faq/) and
+  [Alternatives](https://akobirjontulqinovfuture.github.io/keelyard/alternatives/) pages; PyPI keywords, classifiers and links.
+- **AGENTS.md** for contributors using Codex or another agent: setup, layout, rules.
+
+## 1.1.1 (Oct 28, 2026)
+
+- Docs: new "Claude Code in 2 minutes" page (docs/claude-code.md): install, `keelyard init --agent claude`, the files it writes, MCP approval, what you see, and what was checked by hand on Claude Code 2.1.197.
+- README: "Works with Claude Code" line next to the Codex section.
+
+## 1.1.0 (Oct 29, 2026)
+
+Codex, verified end to end.
+- **Fix (Codex):** a test run in Codex's own shell now counts as proof. Codex 0.165 sends shell results to
+  `PostToolUse` as a plain string with no exit code; keelyard ignored them, so the gate kept asking for a test run
+  that had already passed until it gave up after three blocks.
+- **Fix (memory):** Codex stores its system prompt, AGENTS.md text and hook prompts as messages in its session
+  files. keelyard memory indexed them and fed them back as "earlier sessions" in the brief; it now keeps only what
+  the user and the agent said.
+- New `scripts/codex_e2e.py`: runs the real Codex CLI against a local scripted model (no API key) and checks every
+  hook, the MCP server, AGENTS.md, the proof gate and rewind. New `codex-e2e` CI workflow runs it on every push and
+  weekly.
+- New guide: [Codex in 2 minutes](https://akobirjontulqinovfuture.github.io/keelyard/codex/), and a "Works with
+  Codex" section in the README.
+- `make bench` / `make codex-e2e`, and a "Rerun everything in one command" section with methodology in BENCHMARKS.md.
+- SUPPORT.md, CITATION.cff, roadmap for 1.1.
+
+## 1.0.3 (Oct 28, 2026)
+
+No code changes; this release updates the PyPI page.
+- New logo and brand assets in `assets/brand/` (mark, lockups, light/dark README banner, social preview, favicons)
+- README: banner, badge row (PyPI, downloads, Python, CI, license), quick links, a short "Why" section,
+  long sections folded into `<details>`
+- Docs site uses the new mark as logo and favicon
+
+## 1.0.2 (Oct 28, 2026)
+
+Bugs found by turning on mypy (now part of CI on every OS):
+- `keelyard doctor` crashed with a NameError when `.keelyard/config.toml` was invalid TOML; it now reports the bad config
+- A command that timed out showed its partial output as a Python bytes repr (`b'...'`); it is now decoded text
+  (`keelyard run` and the proof test runner)
+- An agent config file that is not UTF-8 now gives a clear install error instead of a traceback
+- Type fixes across the code base: no blanket ignores; two targeted ignores for the optional matplotlib extra
+
+## 1.0.1 (Oct 28, 2026)
+
+- Install docs (README, AGENTS-install.md, llms.txt, docs) now use `pipx install keelyard` / `pip install keelyard` from PyPI
+- README renders on PyPI: absolute links and image URL; Python versions badge from PyPI
+- PyPI metadata: clearer description, Python 3.11 to 3.13 classifiers, more keywords, Documentation, Source, Issues and Changelog links
+- MCP handshake reports keelyard's version (was empty)
+- `keelyard --json <command>` works the same as `keelyard <command> --json`
+- `keelyard proof test` defaults to the `after` phase
+- `keelyard --help` lists `state`; `doctor` says "1 step", not "1 steps"
+
+## 1.0.0 (Oct 28, 2026, first PyPI release)
 
 First stable release.
 - Published to PyPI as `keelyard` (`pip install keelyard`) by `.github/workflows/publish.yml`, using PyPI

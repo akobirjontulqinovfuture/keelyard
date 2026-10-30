@@ -212,7 +212,8 @@ def handle(event: str, payload: dict, cfg: config.Config) -> dict | None:
         step = None
         if rew["enabled"]:
             sh = Shadow(cfg)
-            step = sh.snapshot(tool="pre-destructive", session=sid) or (sh.steps() or [None])[-1]
+            steps = sh.steps()
+            step = sh.snapshot(tool="pre-destructive", session=sid) or (steps[-1] if steps else None)
         where = f" Snapshot #{step.step} was taken first; `keelyard rewind to {step.step}` restores the files." \
             if step else ""
         if not Nudger(cfg, sid).allow("destructive", kind):
@@ -223,9 +224,9 @@ def handle(event: str, payload: dict, cfg: config.Config) -> dict | None:
     if event == "PreToolUse" and tool in EDIT_TOOLS_WRITE:
         from .brain import Nudger, has_tests_nearby
 
-        for f in _edited_files(tin):
+        for edit_arg in _edited_files(tin):
             try:
-                rel = ReadCache(cfg, sid).resolve(f).relative_to(cfg.root).as_posix()
+                rel = ReadCache(cfg, sid).resolve(edit_arg).relative_to(cfg.root).as_posix()
             except (PermissionError, ValueError):
                 continue
             if not has_tests_nearby(cfg.root, rel) and Nudger(cfg, sid).allow("no-tests", rel):
@@ -271,8 +272,8 @@ def handle(event: str, payload: dict, cfg: config.Config) -> dict | None:
     if event == "PostToolUse":
         out = None
         resp = payload.get("tool_response")
-        if isinstance(resp, str):  # Codex sends the model-facing text, not Claude's {stdout, stderr}
-            resp = {"stdout": resp, "stderr": ""}
+        if isinstance(resp, str):  # Codex sends the shell output as one string, with no exit code
+            resp = {"stdout": resp}
         if tool in SHELL_TOOLS and isinstance(resp, dict) and isinstance(resp.get("stdout"), str):
             cmd = tin.get("command") or tin.get("cmd") or ""
             cmd = " ".join(cmd) if isinstance(cmd, list) else str(cmd)
@@ -286,6 +287,7 @@ def handle(event: str, payload: dict, cfg: config.Config) -> dict | None:
             if hint:
                 out = _ctx("PostToolUse", hint)
         if tool in SHELL_TOOLS and sav.get("filter_bash", True):
+            # Filter the normalized response so Codex output is filtered too; a raw str is never replaced.
             out = _merge(out, _filter_bash(cfg, tin, resp))
         if tool in EDIT_TOOLS_READ:
             f = _file_arg(tin)

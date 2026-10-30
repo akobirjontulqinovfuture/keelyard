@@ -29,7 +29,7 @@ def redact(text: str) -> str:
         return text
     for name, pat in _PATTERNS:
         if name == "assignment":
-            text = pat.sub(lambda m, n=name: f"{m.group(1)}=[REDACTED:{n}]", text)
+            text = pat.sub(lambda m: f"{m.group(1)}=[REDACTED:assignment]", text)
         else:
             text = pat.sub(f"[REDACTED:{name}]", text)
     return text

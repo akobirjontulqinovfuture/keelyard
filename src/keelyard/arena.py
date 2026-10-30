@@ -222,11 +222,11 @@ def render(out_dir: Path) -> Path:
 def _chart(rows: list[dict], title: str, path: Path) -> None:
     import logging
 
-    import matplotlib
+    import matplotlib  # type: ignore[import-not-found]  # optional extra keelyard[report], not installed for type checking
 
     logging.getLogger("matplotlib.font_manager").setLevel(logging.ERROR)  # "findfont: ..." is noise, not a problem
     matplotlib.use("Agg")
-    import matplotlib.pyplot as plt
+    import matplotlib.pyplot as plt  # type: ignore[import-not-found]  # same optional extra
     from matplotlib import font_manager
 
     for f in font_manager.findSystemFonts():

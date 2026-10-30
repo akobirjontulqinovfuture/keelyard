@@ -95,3 +95,15 @@ def test_lazy_falls_back_to_core_if_not_smaller(monkeypatch):
     names = mcp_server.configure_tools("lazy")
     assert set(names) == set(mcp_server.CORE)
     mcp_server.configure_tools("all")
+
+
+def test_handshake_reports_keelyard_version(project):
+    from keelyard import __version__
+
+    async def go():
+        params = StdioServerParameters(command=sys.executable, args=["-m", "keelyard.cli", "mcp"], cwd=str(project), env=dict(os.environ))
+        async with stdio_client(params) as (r, w), ClientSession(r, w) as s:
+            res = await s.initialize()
+            return getattr(res, "server_info", None) or res.serverInfo
+    info = asyncio.run(go())
+    assert info.name == "keelyard" and info.version == __version__

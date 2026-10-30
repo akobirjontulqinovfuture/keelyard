@@ -5,7 +5,7 @@
 keelyard needs Python 3.11 or newer and git.
 
 ```bash
-pipx install git+https://github.com/akobirjontulqinovfuture/keelyard
+pipx install keelyard
 ```
 
 `pip install` works too. Agents call `keelyard` by name, so it has to be on `PATH`. `keelyard doctor`
