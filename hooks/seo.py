@@ -64,7 +64,11 @@ def on_page_markdown(markdown, page, config, files):
         version = re.search(r'^version = "([^"]+)"', (Path(config["docs_dir"]).parent / "pyproject.toml")
                             .read_text(encoding="utf-8"), re.M)
         app = {**APP, "url": config["site_url"], "softwareVersion": version.group(1) if version else None}
-        page.meta["jsonld"] = json.dumps(app)
+        code = {"@context": "https://schema.org", "@type": "SoftwareSourceCode", "name": "keelyard",
+                "description": app["description"], "codeRepository": REPO, "programmingLanguage": "Python",
+                "license": app["license"], "runtimePlatform": "Python 3.11+", "version": app["softwareVersion"],
+                "targetProduct": {"@type": "SoftwareApplication", "name": "keelyard"}, "author": app["author"]}
+        page.meta["jsonld"] = json.dumps([app, code])
     elif src == "faq.md":
         qa = re.findall(r"^## (.+?)\n\n(.+?)(?=\n## |\Z)", markdown, re.S | re.M)
         page.meta["jsonld"] = json.dumps({"@context": "https://schema.org", "@type": "FAQPage", "mainEntity": [
@@ -76,9 +80,12 @@ def on_page_markdown(markdown, page, config, files):
 
 def on_post_build(config):
     site, docs, url = Path(config["site_dir"]), Path(config["docs_dir"]), config["site_url"]
+    bots = ["GPTBot", "OAI-SearchBot", "ChatGPT-User", "PerplexityBot", "Perplexity-User", "ClaudeBot",
+            "Claude-User", "Claude-SearchBot", "Google-Extended", "Googlebot", "Bingbot", "Applebot"]
     (site / "robots.txt").write_text(
-        "# Everyone, including AI crawlers (GPTBot, ClaudeBot, PerplexityBot, Google-Extended), is welcome.\n"
-        f"User-agent: *\nAllow: /\n\nSitemap: {url}sitemap.xml\n", encoding="utf-8")
+        "# Search engines and AI crawlers are welcome to read and cite these docs.\n"
+        + "".join(f"User-agent: {b}\nAllow: /\n\n" for b in bots)
+        + f"User-agent: *\nAllow: /\n\nSitemap: {url}sitemap.xml\n", encoding="utf-8")
     pages = [(p.file.src_uri, p.title) for p in _pages(config["nav"])]
     root = docs.parent
     llms = (root / "llms.txt").read_text(encoding="utf-8").rstrip() + "\n\n## Docs\n\n" + "".join(

@@ -8,6 +8,13 @@ keelyard is an open-source (Apache-2.0) command-line tool and MCP server that ma
 (Claude Code, Codex CLI and OpenCode) prove their work with a passing test run before they can finish, snapshots
 every edit so any step can be undone, and trims noisy tool output. It runs locally, with no telemetry.
 
+## How do I make AI coding agents verify their work?
+
+Give the agent a gate it cannot talk its way past. keelyard's proof gate is a hook that runs when the agent tries
+to finish: if files changed and no passing test run happened after the last edit, the agent is sent back with what
+is missing. The agent can also record the user's request as a checklist (`proof_requirements`) and attach evidence
+to each item (`proof_check`). Works with Claude Code, Codex CLI and OpenCode. See [Proof gate](guide/proof.md).
+
 ## How do I make Claude Code or Codex prove the tests pass before it says "done"?
 
 Install keelyard and wire it into the project:
@@ -27,7 +34,7 @@ keelyard keeps the proof open when tests are deleted, when there are fewer test 
 `skip`/`xfail`/`only` markers appear, or when fewer tests run than before. It does **not** catch every weakening:
 changing an expected value still looks fine. Details: [Guarantees and limits](guarantees.md).
 
-## How do I roll back a bad step an AI coding agent made?
+## How do I roll back changes a Claude Code or Codex agent made?
 
 keelyard snapshots the project after every edit and shell command, in a separate git directory
 (`.keelyard/shadow.git`), so your own `.git` is never touched.
@@ -39,6 +46,13 @@ keelyard rewind to 3
 
 A rewind first snapshots the current state, so it can be undone too. Snapshots hold files only: databases,
 pushed commits and package installs are not restored. See [Rewind](guide/rewind.md).
+
+## Is there an MCP server for agent proof and rollback?
+
+Yes: `keelyard mcp` is a stdio MCP server. Its default tools include `proof_requirements`, `proof_check`,
+`proof_run_tests` and `proof_status` (prove the work), `rewind_list` and `rewind_to` (undo), plus `read_file`,
+`run_compact` and `find_symbol`. `keelyard init` registers it for Claude Code, Codex and OpenCode. It is listed in
+the official MCP Registry as `io.github.akobirjontulqinovfuture/keelyard`. Full list: [MCP reference](mcp.md).
 
 ## How do I reduce the tokens a coding agent uses?
 
