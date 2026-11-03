@@ -9,7 +9,7 @@
   </picture>
 </a>
 
-**Make Claude Code, Codex and OpenCode prove their work, undo any step, and use fewer tokens.**
+**Undo and verify what your AI coding agent did.** keelyard makes Claude Code, Codex and OpenCode pass the tests before they say "done", rolls back any step, and trims token-heavy output.
 
 [![PyPI](https://img.shields.io/pypi/v/keelyard?color=111111&label=pypi)](https://pypi.org/project/keelyard/)
 [![Python](https://img.shields.io/pypi/pyversions/keelyard?color=111111)](https://pypi.org/project/keelyard/)
@@ -25,9 +25,31 @@
 
 </div>
 
-keelyard is an open-source command-line tool and MCP server that stops AI coding agents (Claude Code, Codex CLI,
+Did your AI coding agent break something, skip the tests, or burn through tokens? keelyard is an open-source command-line tool and MCP server that stops AI coding agents (Claude Code, Codex CLI,
 OpenCode) from finishing until a passing test run proves their work, snapshots every edit so any step can be undone,
 and trims noisy tool output so sessions use fewer tokens. It runs locally, with no telemetry.
+
+**Common questions:** [roll back Claude Code or Codex changes](https://akobirjontulqinovfuture.github.io/keelyard/how-to/roll-back-claude-code-codex-changes/) ·
+[make an agent prove its work / stop it skipping tests](https://akobirjontulqinovfuture.github.io/keelyard/how-to/make-ai-coding-agent-prove-its-work/) ·
+[reduce Claude Code token usage](https://akobirjontulqinovfuture.github.io/keelyard/how-to/reduce-claude-code-token-usage/)
+
+## Measured results (and their limits)
+
+On OpenCode 2 with one free model (`opencode/big-pickle`), the `lean` preset cut whole-session input tokens
+**14.2×** on a task with a noisy 1,566-test suite and **6.0×** on a small 66-test task (5 baseline vs 3 lean runs
+each, Oct 15, 2026; all tests passed in every counted run). Uncached input fell less (9.5× and 4.5×). `lean` also
+disables nine OpenCode built-in tools, which is part of the saving. **Claude Code and Codex token savings are not
+measured yet.** Details and raw logs: [BENCHMARKS.md](https://github.com/akobirjontulqinovfuture/keelyard/blob/main/BENCHMARKS.md).
+
+**Reproduce in about 5 minutes** (offline, no API key):
+
+```bash
+git clone https://github.com/akobirjontulqinovfuture/keelyard && cd keelyard
+pip install -e ".[dev]"
+make bench   # output compression + snapshot speed on your machine; session table recomputed from raw logs
+```
+
+Tried it on your own project? [Share your results](https://github.com/akobirjontulqinovfuture/keelyard/issues/new?template=results.yml), good or bad.
 
 ## Why
 

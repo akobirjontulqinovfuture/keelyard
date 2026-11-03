@@ -1,5 +1,5 @@
 site_name: keelyard
-site_description: keelyard makes Claude Code, Codex and OpenCode prove their work with passing tests, undo any step, and use fewer tokens.
+site_description: Undo and verify what your AI coding agent did. keelyard makes Claude Code, Codex and OpenCode pass the tests before "done", rolls back any step, and trims token-heavy output.
 site_url: https://akobirjontulqinovfuture.github.io/keelyard/
 repo_url: https://github.com/akobirjontulqinovfuture/keelyard
 repo_name: keelyard
@@ -60,6 +60,10 @@ nav:
       - Configuration: config.md
       - Exit codes and JSON: json.md
   - Troubleshooting: troubleshooting.md
+  - How-to:
+      - Roll back Claude Code or Codex changes: how-to/roll-back-claude-code-codex-changes.md
+      - Make an agent prove its work: how-to/make-ai-coding-agent-prove-its-work.md
+      - Reduce Claude Code token usage: how-to/reduce-claude-code-token-usage.md
   - FAQ: faq.md
   - Alternatives: alternatives.md
   - Benchmarks: BENCHMARKS.md

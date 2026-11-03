@@ -1,4 +1,6 @@
-# keelyard
+# Undo and verify what your AI coding agent did
+
+**keelyard** is a free, open-source CLI and MCP server for Claude Code, Codex and OpenCode.
 
 <p class="lede">Your coding agent has to show its work before it can say "done". Every edit is snapshotted, so any
 step can be undone. Logs are trimmed before they eat the context window. keelyard works with Claude Code, Codex
@@ -15,6 +17,12 @@ keelyard init
 That is the whole setup. `keelyard init` finds the agents on your machine and wires each one: hooks, the MCP
 server, a short guide in `CLAUDE.md` or `AGENTS.md`, and a skill plus slash commands for Claude Code.
 After that it takes a first snapshot.
+
+## Common problems it solves
+
+- [How to roll back Claude Code or Codex changes](how-to/roll-back-claude-code-codex-changes.md), including shell-made changes
+- [How to make an AI coding agent prove its work before "done"](how-to/make-ai-coding-agent-prove-its-work.md) and stop it skipping tests
+- [How to reduce Claude Code token usage](how-to/reduce-claude-code-token-usage.md), with measured results and their limits
 
 ## The pieces
 

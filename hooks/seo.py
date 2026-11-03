@@ -20,6 +20,12 @@ DESCRIPTIONS = {
                       ".mcp.json and a CLAUDE.md block, checked end to end in CI.",
     "guarantees.md": "Exactly what keelyard guarantees about proof, rewind and secrets, and where the limits are. "
                      "It is not a sandbox.",
+    "how-to/roll-back-claude-code-codex-changes.md": "How to undo or roll back changes made by Claude Code or Codex, "
+    "including shell-made changes and untracked files: Claude Code /rewind vs git vs keelyard rewind.",
+    "how-to/make-ai-coding-agent-prove-its-work.md": "How to make Claude Code, Codex or OpenCode run and pass the "
+    "tests before saying done, and stop agents from skipping or deleting tests, with a Stop-hook proof gate.",
+    "how-to/reduce-claude-code-token-usage.md": "How to reduce Claude Code token usage: cap and filter tool output, "
+    "avoid repeat reads. Measured results, their limits, and how to reproduce them.",
     "faq.md": "Answers to common questions: how to make Claude Code or Codex prove tests pass, how to roll back an AI "
               "agent's edit, and how to reduce agent token usage.",
     "alternatives.md": "How keelyard compares with built-in agent features and with rtk, repomix, serena, ccusage and "
@@ -69,8 +75,9 @@ def on_page_markdown(markdown, page, config, files):
                 "license": app["license"], "runtimePlatform": "Python 3.11+", "version": app["softwareVersion"],
                 "targetProduct": {"@type": "SoftwareApplication", "name": "keelyard"}, "author": app["author"]}
         page.meta["jsonld"] = json.dumps([app, code])
-    elif src == "faq.md":
-        qa = re.findall(r"^## (.+?)\n\n(.+?)(?=\n## |\Z)", markdown, re.S | re.M)
+    elif src == "faq.md" or src.startswith("how-to/"):
+        qa = [(q, a) for q, a in re.findall(r"^#{1,2} (.+?)\n\n(.+?)(?=\n## |\Z)", markdown, re.S | re.M)
+              if q.startswith("How") or q.endswith("?")]
         page.meta["jsonld"] = json.dumps({"@context": "https://schema.org", "@type": "FAQPage", "mainEntity": [
             {"@type": "Question", "name": q.strip(),
              "acceptedAnswer": {"@type": "Answer", "text": re.sub(r"\s+", " ", a).strip()}} for q, a in qa]})

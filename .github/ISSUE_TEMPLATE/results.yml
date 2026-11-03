@@ -1,0 +1,31 @@
+name: Share your results
+description: You ran keelyard (or its benchmark) on your own project. Good, bad or neutral results are all useful.
+title: "Results: "
+labels: ["results"]
+body:
+  - type: markdown
+    attributes:
+      value: Real numbers from independent runs are the most useful feedback keelyard can get. Negative results are welcome. Remove secrets and private code.
+  - type: input
+    id: setup
+    attributes:
+      label: Agent, version, model, OS
+      placeholder: "Claude Code 2.x, Sonnet, macOS 15 / keelyard 1.2.1"
+    validations: { required: true }
+  - type: dropdown
+    id: what
+    attributes:
+      label: What did you try?
+      multiple: true
+      options: [make bench, proof gate, rewind, lean preset / token use, MCP tools, other]
+    validations: { required: true }
+  - type: textarea
+    id: results
+    attributes:
+      label: Results
+      description: Numbers if you have them (tokens before/after, runs per setup), and how you measured.
+    validations: { required: true }
+  - type: textarea
+    id: problems
+    attributes:
+      label: What did not work or surprised you?
