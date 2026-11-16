@@ -584,7 +584,7 @@ def do_status(a):
     data["guarded"] = data["gate"]["state"] == "hooked"
     try:
         from . import audit, budget, risk
-        data["audit"] = audit.evaluate(cfg, sid)
+        data["audit"] = audit.evaluate(cfg, sid, persist=False)
         data["budget"] = budget.status(cfg, sid)
         data["risk"] = risk.recent(cfg, 8)
     except Exception:  # noqa: BLE001

@@ -8,11 +8,10 @@ from a cost field the log already stores. keelyard ships no price table.
 
 from __future__ import annotations
 
-import json
 from dataclasses import dataclass
 from pathlib import Path
 
-from .audit import remember_transcript, transcript_path
+from .audit import iter_jsonl, remember_transcript, transcript_path
 from .config import Config
 from .session import current
 
@@ -36,37 +35,29 @@ class Spend:
 
 
 def _priced_add(s: Spend, i: int, o: int, cr: int, cw: int, cost: float | None, prices: dict, model: str) -> None:
-    s.input += int(i or 0)
-    s.output += int(o or 0)
-    s.cache_read += int(cr or 0)
-    s.cache_write += int(cw or 0)
+    i, o, cr, cw = max(0, int(i or 0)), max(0, int(o or 0)), max(0, int(cr or 0)), max(0, int(cw or 0))
+    s.input += i
+    s.output += o
+    s.cache_read += cr
+    s.cache_write += cw
     s.messages += 1
     if cost is not None:
-        s.cost_usd += float(cost)
+        s.cost_usd += max(0.0, float(cost))
         return
     if model in prices:
         pr = prices[model]
-        s.cost_usd += (int(i or 0) * pr.get("input", 0) + int(o or 0) * pr.get("output", 0)
-                       + int(cr or 0) * pr.get("cache_read", 0) + int(cw or 0) * pr.get("cache_write", 0)) / 1e6
+        s.cost_usd += (i * pr.get("input", 0) + o * pr.get("output", 0)
+                       + cr * pr.get("cache_read", 0) + cw * pr.get("cache_write", 0)) / 1e6
         return
     s.priced = False
 
 
-def spend_from_transcript(path: Path, prices: dict | None = None) -> Spend:
+def spend_from_transcript(path: Path, prices: dict | None = None, root: Path | None = None) -> Spend:
     prices = prices or {}
     s = Spend(source=str(path))
-    try:
-        lines = path.read_text(encoding="utf-8", errors="replace").splitlines()
-    except OSError:
-        return s
     model = "?"
     seen: set = set()
-    for line in lines:
-        try:
-            j = json.loads(line)
-        except json.JSONDecodeError:
-            continue
-        # Claude Code
+    for j in iter_jsonl(path, root):
         m = j.get("message") if isinstance(j.get("message"), dict) else {}
         u = m.get("usage")
         if j.get("type") == "assistant" and u:
@@ -78,7 +69,6 @@ def spend_from_transcript(path: Path, prices: dict | None = None) -> Spend:
                         u.get("cache_read_input_tokens", 0), u.get("cache_creation_input_tokens", 0),
                         None, prices, m.get("model") or "?")
             continue
-        # Codex
         p = j.get("payload") or {}
         if j.get("type") == "turn_context":
             model = p.get("model", model)
@@ -86,7 +76,8 @@ def spend_from_transcript(path: Path, prices: dict | None = None) -> Spend:
             u = (p.get("info") or {}).get("last_token_usage")
             if u:
                 cached = u.get("cached_input_tokens", 0)
-                _priced_add(s, u.get("input_tokens", 0) - cached, u.get("output_tokens", 0), cached, 0, None, prices, model)
+                raw_in = u.get("input_tokens", 0)
+                _priced_add(s, max(0, raw_in - cached), u.get("output_tokens", 0), cached, 0, None, prices, model)
     return s
 
 
@@ -95,7 +86,7 @@ def session_spend(cfg: Config, session: str | None = None) -> Spend:
     path = transcript_path(cfg, sid)
     if not path:
         return Spend()
-    return spend_from_transcript(path, cfg.raw.get("prices") or {})
+    return spend_from_transcript(path, cfg.raw.get("prices") or {}, cfg.root)
 
 
 def status(cfg: Config, session: str | None = None) -> dict:

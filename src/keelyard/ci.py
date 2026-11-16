@@ -1,10 +1,10 @@
 """Markdown proof report for a PR, plus a test-inventory diff against a git base.
 
-`keelyard ci report` is generated from the local session (proof, audit, risk, spend).
+`keelyard ci` writes a markdown report from the local session (proof, audit, risk, spend).
 `.keelyard` is gitignored, so a GitHub Actions runner only sees that state if you
 upload it or run keelyard on the machine that had the agent session.
 
-`keelyard ci diff` compares today's test files with a git ref (the PR base, `main`,
+`keelyard ci --diff-only` compares today's test files with a git ref (the PR base, `main`,
 or `--base`) and does not need a keelyard session. That is the check that belongs
 in CI: an agent PR that deletes or skips tests is flagged even when no proof bundle
 was uploaded.
@@ -17,13 +17,15 @@ from __future__ import annotations
 
 import json
 import os
+import re
 import subprocess
 from pathlib import Path
 from urllib.error import HTTPError
-from urllib.request import Request, urlopen
+from urllib.parse import urlparse
+from urllib.request import HTTPRedirectHandler, Request, build_opener
 
 from . import __version__, watch
-from .config import Config
+from .config import VENDOR_DIRS, Config
 from .trust import inventory, is_tracked_name, read_worktree, weakening
 
 MARKER = "<!-- keelyard-ci -->"
@@ -51,10 +53,10 @@ def default_base(root: Path) -> str | None:
 
 
 def files_at(root: Path, ref: str) -> dict[str, str]:
-    names = [n for n in _git(root, "ls-tree", "-r", "--name-only", ref).splitlines() if is_tracked_name(n)]
+    names = [n for n in _git(root, "ls-tree", "-r", "--name-only", "--", ref).splitlines() if is_tracked_name(n)]
     out = {}
     for rel in names:
-        show = subprocess.run(["git", "-C", str(root), "show", f"{ref}:{rel}"], capture_output=True)
+        show = subprocess.run(["git", "-C", str(root), "show", "--", f"{ref}:{rel}"], capture_output=True)
         if show.returncode == 0:
             out[rel] = show.stdout.decode("utf-8", "replace")
     return out
@@ -67,13 +69,18 @@ def inventory_diff(cfg: Config, base: str | None = None) -> dict:
     try:
         before = inventory(files_at(cfg.root, ref))
     except RuntimeError as e:
-        return {"base": ref, "weakened": [], "ok": True, "why": str(e)}
+        # A requested base that cannot be read must not look like a clean pass.
+        return {"base": ref, "weakened": [], "ok": False, "why": str(e)}
     now_names = set(before["tests"]) | set(before["configs"])
-    # also pick up new test files in the worktree
-    for p in cfg.root.rglob("*"):
-        if p.is_file():
+    skip = VENDOR_DIRS | {".keelyard", ".git"}
+    for dirpath, dirnames, filenames in os.walk(cfg.root, followlinks=False):
+        dirnames[:] = [d for d in dirnames if d not in skip]
+        for name in filenames:
+            fp = Path(dirpath) / name
+            if fp.is_symlink() or not fp.is_file():
+                continue
             try:
-                rel = p.relative_to(cfg.root).as_posix()
+                rel = fp.relative_to(cfg.root).as_posix()
             except ValueError:
                 continue
             if is_tracked_name(rel):
@@ -146,27 +153,50 @@ def _pr_number(explicit: int | None) -> int | None:
     return None
 
 
+_REPO = re.compile(r"^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$")
+_API_HOST = "api.github.com"
+
+
+class _RefuseRedirect(HTTPRedirectHandler):
+    def redirect_request(self, req, fp, code, msg, headers, newurl):  # noqa: ANN001
+        raise RuntimeError("refusing HTTP redirect when talking to GitHub")
+
+
+def _open(req: Request, timeout: int = 30):
+    return build_opener(_RefuseRedirect).open(req, timeout=timeout)
+
+
 def post_comment(body: str, pr: int, repo: str, token: str) -> dict:
     """Create or update the keelyard-ci comment on a PR. Never logs the token."""
-    base = f"https://api.github.com/repos/{repo}"
+    if not _REPO.fullmatch(repo or ""):
+        raise RuntimeError("repo must be in owner/name form, like acme/app.")
+    if not isinstance(pr, int) or pr <= 0:
+        raise RuntimeError("pull request number must be a positive integer.")
+    base = f"https://{_API_HOST}/repos/{repo}"
     headers = {"Authorization": f"Bearer {token}", "Accept": "application/vnd.github+json",
                "User-Agent": f"keelyard/{__version__}", "X-GitHub-Api-Version": "2022-11-28"}
 
     def call(method: str, url: str, payload: dict | None = None) -> dict | list:
+        host = urlparse(url).hostname
+        if host != _API_HOST or not url.startswith("https://"):
+            raise RuntimeError("refusing to call a host other than api.github.com")
         data = None if payload is None else json.dumps(payload).encode()
         req = Request(url, data=data, headers={**headers, "Content-Type": "application/json"}, method=method)
         try:
-            with urlopen(req, timeout=30) as r:  # noqa: S310 — https GitHub API only
+            with _open(req, timeout=30) as r:  # noqa: S310 — https api.github.com only, redirects refused
                 return json.loads(r.read().decode())
         except HTTPError as e:
-            raise RuntimeError(f"GitHub API {e.code} on {method} {url.split('repos/')[-1]}") from None
+            raise RuntimeError(f"GitHub API {e.code} on {method} repos/{repo}{urlparse(url).path.split(repo, 1)[-1]}") from None
 
     raw = call("GET", f"{base}/issues/{pr}/comments?per_page=100")
     if not isinstance(raw, list):
         raise RuntimeError("GitHub API did not return a comment list")
     existing = next((c for c in raw if isinstance(c, dict) and MARKER in (c.get("body") or "")), None)
     if existing:
-        out = call("PATCH", existing["url"], {"body": body})
+        cid = existing.get("id")
+        if not isinstance(cid, int):
+            raise RuntimeError("GitHub comment id was missing")
+        out = call("PATCH", f"{base}/issues/comments/{cid}", {"body": body})
         url = out.get("html_url") if isinstance(out, dict) else None
         return {"action": "updated", "url": url}
     out = call("POST", f"{base}/issues/{pr}/comments", {"body": body})

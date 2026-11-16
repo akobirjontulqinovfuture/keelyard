@@ -24,7 +24,7 @@ def dashboard(cfg: Config, session: str | None = None) -> dict:
     mine = [s for s in steps if not sid or s.session in ("", sid)]
     edits = [s for s in mine if s.tool not in QUIET]
     last = steps[-1] if steps else None
-    au = audit.evaluate(cfg, sid)
+    au = audit.evaluate(cfg, sid, persist=False)
     bd = budget.status(cfg, sid)
     risky = [e for e in risk.recent(cfg, 20) if not sid or e.get("session") in (None, sid)]
     return {
@@ -85,7 +85,8 @@ def run(cfg: Config, once: bool = False, interval: float = 1.0) -> dict:
         from rich.text import Text
 
         console = Console()
-        with Live(Text(render(data)), console=console, refresh_per_second=max(1, int(1 / max(interval, 0.2)))) as live:
+        interval = max(0.2, float(interval) or 1.0)
+        with Live(Text(render(data)), console=console, refresh_per_second=max(1, int(1 / interval))) as live:
             while True:
                 time.sleep(interval)
                 data = dashboard(cfg)

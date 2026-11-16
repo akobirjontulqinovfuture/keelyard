@@ -42,9 +42,19 @@ def _merge(a: dict | None, b: dict | None) -> dict | None:
 
 
 def _edited_files(tin: dict) -> list[str]:
+    out: list[str] = []
     f = _file_arg(tin)
     if f:
-        return [f]
+        out.append(f)
+    for e in tin.get("edits") or tin.get("files") or []:
+        if isinstance(e, dict):
+            ef = _file_arg(e)
+            if ef and ef not in out:
+                out.append(ef)
+        elif isinstance(e, str) and e not in out:
+            out.append(e)
+    if out:
+        return out
     patch = tin.get("patch") or tin.get("input") or ""
     return re.findall(r"^\*\*\* (?:Update|Add) File: (.+)$", patch, re.M) if isinstance(patch, str) else []
 
@@ -217,14 +227,6 @@ def handle(event: str, payload: dict, cfg: config.Config) -> dict | None:
     if event == "PreToolUse" and tool in EDIT_TOOLS_WRITE:
         from .brain import Nudger, has_tests_nearby
 
-        for edit_arg in _edited_files(tin):
-            try:
-                rel = ReadCache(cfg, sid).resolve(edit_arg).relative_to(cfg.root).as_posix()
-            except (PermissionError, ValueError):
-                continue
-            if not has_tests_nearby(cfg.root, rel) and Nudger(cfg, sid).allow("no-tests", rel):
-                return _ctx("PreToolUse", f"keelyard: no tests found for {rel}. Add or point to a test that covers "
-                                          "this change, so proof_run_tests can show it works.")
         try:
             from .risk import deny as risk_deny
             from .risk import nudge as risk_nudge
@@ -239,6 +241,14 @@ def handle(event: str, payload: dict, cfg: config.Config) -> dict | None:
                 return _ctx("PreToolUse", risk_msg, systemMessage=risk_msg)
         except Exception:  # noqa: BLE001
             pass
+        for edit_arg in _edited_files(tin):
+            try:
+                rel = ReadCache(cfg, sid).resolve(edit_arg).relative_to(cfg.root).as_posix()
+            except (PermissionError, ValueError):
+                continue
+            if not has_tests_nearby(cfg.root, rel) and Nudger(cfg, sid).allow("no-tests", rel):
+                return _ctx("PreToolUse", f"keelyard: no tests found for {rel}. Add or point to a test that covers "
+                                          "this change, so proof_run_tests can show it works.")
         return None
 
     if event == "PreCompact":

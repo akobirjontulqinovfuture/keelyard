@@ -29,9 +29,16 @@ def write_claude_transcript(path: Path, texts: list[str], usage=None):
     path.write_text("\n".join(lines) + "\n", encoding="utf-8")
 
 
-def test_audit_flags_false_pass_claim_and_ignores_hypotheticals(cfg, project, tmp_path):
-    log = tmp_path / "s.jsonl"
-    write_claude_transcript(log, [
+
+def session_log(project: Path, texts: list[str], usage=None) -> Path:
+    log = project / ".keelyard" / "s.jsonl"
+    log.parent.mkdir(parents=True, exist_ok=True)
+    write_claude_transcript(log, texts, usage)
+    return log
+
+
+def test_audit_flags_false_pass_claim_and_ignores_hypotheticals(cfg, project):
+    log = session_log(project, [
         "If all tests pass we can merge.",
         "I will run the tests next.",
         "All tests passed and the suite is green.",
@@ -53,9 +60,8 @@ def test_audit_flags_false_pass_claim_and_ignores_hypotheticals(cfg, project, tm
     assert all("If all tests" not in c["text"] and "will run" not in c["text"] for c in result["claims"])
 
 
-def test_audit_flags_unchanged_claim_when_tests_were_deleted(cfg, project, tmp_path):
-    log = tmp_path / "s.jsonl"
-    write_claude_transcript(log, ["I didn't change any tests, only app.py."])
+def test_audit_flags_unchanged_claim_when_tests_were_deleted(cfg, project):
+    log = session_log(project, ["I didn't change any tests, only app.py."])
     hooks.handle("SessionStart", claude("SessionStart", source="startup", transcript_path=str(log)), cfg)
     Shadow(cfg).snapshot("baseline", session="s1")
     (project / "tests" / "test_app.py").write_text("# gone\n")
@@ -68,9 +74,8 @@ def test_audit_flags_unchanged_claim_when_tests_were_deleted(cfg, project, tmp_p
     assert any("test file deleted" in lie["evidence"] or "tests removed" in lie["evidence"] for lie in result["lies"])
 
 
-def test_audit_ok_when_claim_matches_passing_run(cfg, project, tmp_path):
-    log = tmp_path / "s.jsonl"
-    write_claude_transcript(log, ["All tests passed."])
+def test_audit_ok_when_claim_matches_passing_run(cfg, project):
+    log = session_log(project, ["All tests passed."])
     hooks.handle("SessionStart", claude("SessionStart", source="startup", transcript_path=str(log)), cfg)
     (project / "app.py").write_text("def add(a, b):\n    return a + b\n")
     hooks.handle("PostToolUse", claude("PostToolUse", tool_name="Edit", tool_input={"file_path": "app.py"},
@@ -81,9 +86,8 @@ def test_audit_ok_when_claim_matches_passing_run(cfg, project, tmp_path):
     assert result["claims"] and result["ok"] and not result["lies"]
 
 
-def test_stop_hook_mentions_the_false_claim(cfg, project, tmp_path):
-    log = tmp_path / "s.jsonl"
-    write_claude_transcript(log, ["All tests passed."])
+def test_stop_hook_mentions_the_false_claim(cfg, project):
+    log = session_log(project, ["All tests passed."])
     hooks.handle("SessionStart", claude("SessionStart", source="startup", transcript_path=str(log)), cfg)
     (project / "app.py").write_text("x = 1\n")
     hooks.handle("PostToolUse", claude("PostToolUse", tool_name="Write", tool_input={"file_path": "app.py"},
@@ -110,9 +114,8 @@ def test_risk_scores_and_pre_checkpoints(cfg, project):
     assert ev[-1]["step"] == steps[-1].step
 
 
-def test_budget_blocks_writes_when_cap_crossed(cfg, project, tmp_path):
-    log = tmp_path / "s.jsonl"
-    write_claude_transcript(log, ["working"], usage={"input_tokens": 80, "output_tokens": 20,
+def test_budget_blocks_writes_when_cap_crossed(cfg, project):
+    log = session_log(project, ["working"], usage={"input_tokens": 80, "output_tokens": 20,
                                                      "cache_read_input_tokens": 0, "cache_creation_input_tokens": 0})
     cfg_path = project / ".keelyard" / "config.toml"
     cfg_path.parent.mkdir(parents=True, exist_ok=True)
@@ -192,17 +195,20 @@ def test_ci_post_comment_update(cfg, project, monkeypatch):
         def __exit__(self, *a):
             return False
 
-    def fake_urlopen(req, timeout=30):
+    def fake_open(req, timeout=30):
         calls.append((req.get_method(), req.full_url, req.data))
         if req.get_method() == "GET":
+            # A poisoned comment URL must not be followed; we patch by numeric id.
             return FakeResp(json.dumps([{"id": 1, "body": "old <!-- keelyard-ci -->",
-                                      "url": "https://api.github.com/x", "html_url": "https://example.com/c1"}]))
+                                      "url": "https://evil.example/steal", "html_url": "https://example.com/c1"}]))
         return FakeResp(json.dumps({"html_url": "https://github.com/a/b/pull/1#c1"}))
 
-    monkeypatch.setattr("keelyard.ci.urlopen", fake_urlopen)
+    monkeypatch.setattr("keelyard.ci._open", fake_open)
     out = post_comment("<!-- keelyard-ci -->\nnew", 1, "a/b", "secret-token-do-not-print")
     assert out["action"] == "updated" and out["url"].endswith("c1")
-    assert any(c[0] == "PATCH" for c in calls)
+    patch_urls = [c[1] for c in calls if c[0] == "PATCH"]
+    assert patch_urls == ["https://api.github.com/repos/a/b/issues/comments/1"]
+    assert all("evil.example" not in c[1] for c in calls)
     # the token is in the request header, not in our return value
     assert "secret-token" not in json.dumps(out)
 
@@ -211,3 +217,103 @@ def test_cli_audit_risk_budget_help(project, capsys):
     for cmd in ("audit", "risk", "budget", "ci", "watch"):
         assert main([cmd, "--help"]) == 0
         assert cmd in capsys.readouterr().out.lower()
+
+def test_audit_keeps_claims_after_review_and_after_that(cfg, project):
+    claims = {c["text"].lower() for c in audit.evaluate(cfg, "s1", texts=[
+        "Please review this. All tests passed.",
+        "After that, all tests passed.",
+        "If all tests pass we can merge.",
+    ], persist=False)["claims"]}
+    assert any("all tests passed" in t for t in claims)
+    assert all("if all tests" not in t for t in claims)
+
+
+def test_audit_persist_false_does_not_write(cfg, project):
+    marker = cfg.state / "audit.json"
+    marker.parent.mkdir(parents=True, exist_ok=True)
+    marker.write_text("MARKER", encoding="utf-8")
+    audit.evaluate(cfg, "s1", texts=["All tests passed."], persist=False)
+    assert marker.read_text(encoding="utf-8") == "MARKER"
+    audit.evaluate(cfg, "s1", texts=["All tests passed."], persist=True)
+    assert "MARKER" not in marker.read_text(encoding="utf-8")
+    data = json.loads(marker.read_text(encoding="utf-8"))
+    assert data["session"] == "s1" and data["claims"]
+
+
+def test_transcript_path_must_stay_under_allowlist(cfg, project, tmp_path):
+    outside = tmp_path / "secret.jsonl"
+    write_claude_transcript(outside, ["All tests passed."])
+    hooks.handle("SessionStart", claude("SessionStart", source="startup", transcript_path=str(outside)), cfg)
+    assert audit.transcript_path(cfg, "s1") is None
+    # A symlink inside the project that points outside is also rejected.
+    link = project / ".keelyard" / "link.jsonl"
+    link.parent.mkdir(parents=True, exist_ok=True)
+    try:
+        link.symlink_to(outside)
+    except OSError:
+        pytest.skip("symlinks not available")
+    hooks.handle("SessionStart", claude("SessionStart", source="startup", transcript_path=str(link)), cfg)
+    assert audit.transcript_path(cfg, "s1") is None
+    # XDG_DATA_HOME agent logs are allowed (conftest points XDG_DATA_HOME at tmp_path/xdg).
+    xdg = tmp_path / "xdg" / "opencode" / "s.jsonl"
+    xdg.parent.mkdir(parents=True, exist_ok=True)
+    write_claude_transcript(xdg, ["All tests passed."])
+    hooks.handle("SessionStart", claude("SessionStart", source="startup", transcript_path=str(xdg)), cfg)
+    allowed = audit.transcript_path(cfg, "s1")
+    assert allowed is not None and allowed.resolve() == xdg.resolve()
+
+
+def test_budget_clamps_negative_codex_cached_tokens(cfg, project):
+    log = project / ".keelyard" / "codex.jsonl"
+    log.parent.mkdir(parents=True, exist_ok=True)
+    lines = [
+        json.dumps({"type": "turn_context", "payload": {"model": "m1"}}),
+        json.dumps({"type": "event_msg", "payload": {"type": "token_count",
+                   "info": {"last_token_usage": {"input_tokens": 10, "cached_input_tokens": 30, "output_tokens": 5}}}}),
+    ]
+    log.write_text("\n".join(lines) + "\n", encoding="utf-8")
+    s = budget.spend_from_transcript(log, prices={"m1": {"input": 1_000_000, "output": 1_000_000, "cache_read": 0}},
+                                     root=project)
+    assert s.input == 0 and s.cache_read == 30 and s.output == 5
+    assert s.tokens == 35
+    assert s.cost_usd >= 0
+
+
+def test_risk_scoring_boundaries(cfg, project):
+    assert risk.score_path("docker-compose.yml")[0] == "high"
+    assert risk.score_path("Dockerfile.prod")[0] == "high"
+    assert risk.score_path("main.tf")[0] == "high"
+    assert risk.score_path("prod.tfvars")[0] == "high"
+    assert risk.score_path("model.tflite")[0] == "low"
+    assert risk.score_path("authors.py")[0] == "low"
+    assert risk.score_path("tokenize.py")[0] == "low"
+    assert risk.score_path("auth.py")[0] == "high"
+    assert risk.score_path("token.py")[0] == "high"
+    ev = risk.score([str(project / "tests" / "test_app.py")], deleting=["tests/test_app.py"])
+    assert ev["level"] == "critical"
+    assert any(r["deleting"] for r in ev["reasons"])
+
+
+def test_risk_runs_before_no_tests_nudge(cfg, project):
+    hooks.handle("SessionStart", claude("SessionStart", source="startup"), cfg)
+    patch = "*** Update File: newmod.py\n@@\n+x = 1\n*** Update File: .env\n@@\n+SECRET=1\n"
+    out = hooks.handle("PreToolUse", claude("PreToolUse", tool_name="apply_patch", tool_input={"input": patch}), cfg)
+    ev = risk.recent(cfg)
+    assert ev and ev[-1]["level"] == "critical"
+    blob = json.dumps(out)
+    assert "risk" in blob.lower() or "environment secrets" in blob.lower() or "SECRET" in blob or ".env" in blob
+    assert "no tests found" not in blob
+
+
+def test_ci_invalid_base_is_not_ok(cfg, project):
+    diff = inventory_diff(cfg, "this-ref-does-not-exist")
+    assert diff["ok"] is False
+    assert diff["base"] == "this-ref-does-not-exist"
+    assert diff.get("why")
+
+
+def test_ci_post_comment_rejects_bad_repo_or_pr():
+    with pytest.raises(RuntimeError, match="owner/name"):
+        post_comment("x", 1, "not a repo", "tok")
+    with pytest.raises(RuntimeError, match="positive"):
+        post_comment("x", 0, "a/b", "tok")

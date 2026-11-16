@@ -13,6 +13,7 @@ import re
 import time
 
 from .config import Config
+from .locking import file_lock
 from .snapshot import Shadow
 
 LEVELS = {"none": 0, "low": 1, "medium": 2, "high": 3, "critical": 4}
@@ -28,13 +29,14 @@ _RULES: list[tuple[re.Pattern, str, str]] = [
     (re.compile(r"(^|/)(credentials|service-account.*|secrets?)\.(json|ya?ml|toml)$", re.I),
      "critical", "credentials file"),
     (re.compile(r"(^|/)\.github/workflows/", re.I), "high", "CI workflow"),
-    (re.compile(r"(^|/)(Dockerfile|docker-compose.+\.ya?ml|compose.+\.ya?ml)$", re.I), "high", "container deploy"),
-    (re.compile(r"(^|/)(terraform|\.tf|helm/|k8s/|kubernetes/)", re.I), "high", "infra as code"),
+    (re.compile(r"(^|/)(Dockerfile(\.[^/]+)?|docker-compose.*\.ya?ml|compose\.ya?ml)$", re.I), "high", "container deploy"),
+    (re.compile(r"(^|/)([^/]+\.(tf|tfvars)$|(terraform|helm|k8s|kubernetes)/)", re.I), "high", "infra as code"),
     (re.compile(r"(^|/)(alembic/|migrations?/|prisma/migrations/)", re.I), "high", "database migration"),
     (re.compile(r"(^|/)(tests?|__tests__|spec)/.+\.(py|[cm]?[jt]sx?|go|rs|rb|php|java|kt|cs)$"
                 r"|(^|/)test_[^/]*\.py$|_test\.(py|go)$|\.(test|spec)\.[cm]?[jt]sx?$", re.I),
      "high", "test file"),
-    (re.compile(r"(auth|oauth|passwd|password|secret|token|jwt|credential)", re.I), "high", "auth or secrets-related path"),
+    (re.compile(r"(^|/)([^/]*[_.-])?(auth|oauth|passwd|password|secret|token|jwt|credential)s?([_.-][^/]*)?$", re.I),
+     "high", "auth or secrets-related path"),
     (re.compile(r"(^|/)(pyproject\.toml|setup\.(cfg|py)|requirements.+\.txt|Pipfile(\.lock)?|"
                 r"package(-lock)?\.json|pnpm-lock\.yaml|yarn\.lock|go\.mod|go\.sum|"
                 r"Cargo\.toml|Cargo\.lock|Gemfile(\.lock)?|composer\.(json|lock)|poetry\.lock)$", re.I),
@@ -72,13 +74,31 @@ def deleted_in(tool_input: dict) -> list[str]:
     return []
 
 
+def _posix(path: str) -> str:
+    return path.replace("\\", "/")
+
+
+def _same_path(a: str, b: str) -> bool:
+    a, b = _posix(a).rstrip("/"), _posix(b).rstrip("/")
+    return a == b or a.endswith("/" + b) or b.endswith("/" + a)
+
+
+def _is_deleted(path: str, gone: list[str]) -> bool:
+    return any(_same_path(path, g) for g in gone)
+
+
 def score(files: list[str], deleting: list[str] | None = None) -> dict:
-    gone = {d.replace("\\", "/") for d in (deleting or [])}
+    gone = [_posix(d) for d in (deleting or [])]
     reasons = []
     worst, worst_n = "none", 0
-    for f in list(dict.fromkeys([*files, *gone])):
-        level, why = score_path(f, deleting=f in gone)
-        reasons.append({"path": f, "level": level, "why": why, "deleting": f in gone})
+    seen: list[str] = []
+    for f in [*files, *gone]:
+        if any(_same_path(f, s) for s in seen):
+            continue
+        seen.append(f)
+        deleting_this = _is_deleted(f, gone)
+        level, why = score_path(_posix(f), deleting=deleting_this)
+        reasons.append({"path": _posix(f), "level": level, "why": why, "deleting": deleting_this})
         if LEVELS[level] > worst_n:
             worst, worst_n = level, LEVELS[level]
     return {"level": worst, "score": worst_n, "reasons": reasons}
@@ -90,11 +110,15 @@ def _at_least(level: str, want: str) -> bool:
 
 def log(cfg: Config, event: dict) -> None:
     p = cfg.state / "risk.jsonl"
-    with p.open("a", encoding="utf-8") as f:
-        f.write(json.dumps(event, ensure_ascii=False, default=str) + "\n")
-    if p.stat().st_size > 1_000_000:
-        lines = p.read_text(encoding="utf-8", errors="replace").splitlines()[-500:]
-        p.write_text("\n".join(lines) + "\n", encoding="utf-8")
+    try:
+        with file_lock(cfg.state / "risk.lock", timeout=2):
+            with p.open("a", encoding="utf-8") as f:
+                f.write(json.dumps(event, ensure_ascii=False, default=str) + "\n")
+            if p.exists() and p.stat().st_size > 1_000_000:
+                lines = p.read_text(encoding="utf-8", errors="replace").splitlines()[-500:]
+                p.write_text("\n".join(lines) + "\n", encoding="utf-8")
+    except (OSError, TimeoutError):
+        pass
 
 
 def recent(cfg: Config, n: int = 20) -> list[dict]:
