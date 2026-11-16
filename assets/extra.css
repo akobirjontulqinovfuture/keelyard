@@ -1,0 +1,19 @@
+@font-face{font-family:"Geist";src:url("fonts/geist.woff2") format("woff2");font-weight:100 900;font-display:swap}
+@font-face{font-family:"Geist Mono";src:url("fonts/geist-mono.woff2") format("woff2");font-weight:100 900;font-display:swap}
+:root{--md-text-font:"Geist";--md-code-font:"Geist Mono"}
+[data-md-color-scheme="default"]{
+  --md-default-bg-color:#FAFAF9;--md-default-fg-color:#111111;--md-default-fg-color--light:#6B6B66;
+  --md-primary-fg-color:#FAFAF9;--md-primary-bg-color:#111111;--md-accent-fg-color:#1F6F4A;
+  --md-typeset-a-color:#1F6F4A;--md-code-bg-color:#F3F2EF;--md-footer-bg-color:#111111}
+[data-md-color-scheme="slate"]{
+  --md-default-bg-color:#0F0F0E;--md-primary-fg-color:#0F0F0E;--md-accent-fg-color:#5CB88A;--md-typeset-a-color:#5CB88A;
+  --md-code-bg-color:#1C1C1A}
+.md-header{box-shadow:none;border-bottom:1px solid #E7E5E4}
+[data-md-color-scheme="slate"] .md-header{border-bottom-color:#2A2A28}
+.md-tabs{background:transparent;border-bottom:1px solid #E7E5E4}
+.md-typeset h1{font-weight:600;letter-spacing:-.02em;color:inherit}
+.md-typeset h2{font-weight:600;letter-spacing:-.01em}
+.md-typeset{font-size:.78rem;line-height:1.65}
+.md-typeset table:not([class]){font-size:.72rem;border:1px solid #E7E5E4;box-shadow:none;border-radius:8px}
+.md-typeset img{border-radius:8px}
+.md-typeset .lede{font-size:1rem;color:var(--md-default-fg-color--light);max-width:36rem}
