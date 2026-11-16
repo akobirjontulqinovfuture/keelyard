@@ -1,5 +1,17 @@
 # Changelog
 
+## 1.3.1 (Nov 17, 2026)
+
+Bug fixes for the 1.3.0 session-trust commands. No new features.
+
+- **Audit.** "Please review this. All tests passed." and "After that, all tests passed." are scored as real claims; "if all tests pass" is still ignored. `keelyard watch` and `keelyard status` no longer rewrite `audit.json`. Session logs are read only when the path stays under the project, the user's home, or a known agent directory (including `$XDG_DATA_HOME`). Concurrent hooks lock the transcript and audit state files.
+- **Budget.** Transcripts are streamed with a per-line size cap. Codex cached-token counts can no longer go negative or pull a priced cost below zero.
+- **Risk.** `docker-compose.yml`, `Dockerfile.prod`, `*.tf` and `*.tfvars` score as high; `model.tflite` stays low; `authors.py` / `tokenize.py` are not treated as auth files. A delete whose patch path is relative and whose tool path is absolute is still scored as a deletion. The pre-edit snapshot runs before the no-tests nudge, so a patch that also touches `.env` is checkpointed. `MultiEdit` `edits[]` paths are included.
+- **CI.** Worktree scans skip `.git`, `.keelyard` and other vendor dirs and do not follow symlinks. An unreadable `--base` is a failure, not a clean pass. `--comment` only calls `api.github.com`, addresses comments by numeric id (it does not follow a URL from the API body), validates `owner/name` and the PR number, and refuses redirects so `GITHUB_TOKEN` cannot be forwarded off GitHub.
+
+This release is not published to PyPI until the maintainer does so. Install from git to use 1.3.1.
+
+
 ## 1.3.0 (Nov 16, 2026)
 
 Session trust: catch a false "tests passed", score risky edits before they land, cap spend, and report it on a PR.
