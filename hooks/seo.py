@@ -36,6 +36,7 @@ DESCRIPTIONS = {
                        "can be undone with keelyard rewind.",
     "guide/context.md": "Output filters, code outlines and ranked symbol search that keep a coding agent's context "
                         "window small.",
+    "guide/session-trust.md": "Catch a false tests-passed claim, snapshot before risky edits, cap session spend, and a PR proof report.",
     "guide/memory.md": "Search past Claude Code, Codex and OpenCode sessions, and add up token usage by day, model or agent.",
     "guide/brain.md": "How keelyard puts a small, capped amount of itself into the agent's context at the moments that matter.",
     "guide/presets.md": "The lean, balanced and max-quality presets: which keelyard features and agent settings each turns on.",

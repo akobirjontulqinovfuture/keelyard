@@ -1,0 +1,47 @@
+name: keelyard proof report
+description: Write a keelyard proof, audit and test-inventory report, and optionally comment on the pull request.
+inputs:
+  github-token:
+    description: Token used only to post or update the PR comment. Leave empty to skip the comment.
+    required: false
+    default: ${{ github.token }}
+  comment:
+    description: Post or update the report as a PR comment when a token and pull request are available.
+    required: false
+    default: "true"
+  base:
+    description: Git ref to compare tests against. Empty uses the PR base or main.
+    required: false
+    default: ""
+outputs:
+  report:
+    description: Path of the markdown report
+    value: ${{ steps.run.outputs.report }}
+runs:
+  using: composite
+  steps:
+    - name: Install keelyard from this action's repository
+      shell: bash
+      run: python3 -m pip install --disable-pip-version-check -q "${GITHUB_ACTION_PATH}/../../.."
+    - name: Write the report
+      id: run
+      shell: bash
+      env:
+        GITHUB_TOKEN: ${{ inputs.github-token }}
+      run: |
+        set -euo pipefail
+        out="${RUNNER_TEMP:-/tmp}/keelyard-report.md"
+        args=(ci --out "$out")
+        if [ -n "${{ inputs.base }}" ]; then
+          args+=(--base "${{ inputs.base }}")
+        fi
+        if [ "${{ inputs.comment }}" = "true" ] && [ -n "${GITHUB_TOKEN:-}" ]; then
+          args+=(--comment)
+        fi
+        # A non-zero exit means the proof is incomplete or tests were weakened; still upload the report.
+        keelyard "${args[@]}" || true
+        echo "report=$out" >> "$GITHUB_OUTPUT"
+        if [ -f "$out" ]; then
+          echo "----- keelyard report -----"
+          cat "$out"
+        fi

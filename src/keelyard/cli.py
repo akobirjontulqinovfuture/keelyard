@@ -38,6 +38,11 @@ everyday:
   code              outline a file, map the project, find a symbol
   memory            search past sessions across all your agents
   usage             tokens and cost from your local agent logs
+  audit             compare what the agent claimed about tests with the recorded runs
+  risk              risky edits in this session, and the snapshot taken before each one
+  watch             live session dashboard: proof, edits, spend, risk, false claims
+  budget            token and dollar spend for this session against any cap
+  ci                markdown proof report for a PR, plus a test-inventory diff against git
 
 more:
   swarm             fan small, checkable tasks out to a cheap model
@@ -80,7 +85,26 @@ EXAMPLES = {
   keelyard memory index            # read new sessions from all agents
   keelyard memory search "rate limit retry"
   keelyard memory stats""",
+    "audit": """examples:
+  keelyard audit
+  keelyard audit --json""",
+    "risk": """examples:
+  keelyard risk
+  keelyard risk --json""",
+    "watch": """examples:
+  keelyard watch --once            # one snapshot, then exit
+  keelyard watch                   # refresh until Ctrl-C
+  keelyard watch --once --json""",
+    "budget": """examples:
+  keelyard budget
+  keelyard budget --json""",
+    "ci": """examples:
+  keelyard ci                      # markdown report + test diff vs main
+  keelyard ci --out report.md
+  keelyard ci --diff-only --base origin/main
+  keelyard ci --comment --pr 42    # post or update the PR comment (needs GITHUB_TOKEN)""",
 }
+
 
 
 class Fail(Exception):
@@ -243,6 +267,20 @@ def _parser() -> argparse.ArgumentParser:
 
     p = cmd("usage", "tokens and cost from your local agent logs", "examples:\n  keelyard usage\n  keelyard usage --by model")
     p.add_argument("--by", choices=["day", "model", "agent"], default="day")
+
+    cmd("audit", "compare what the agent claimed about tests with the recorded runs")
+    cmd("risk", "risky edits in this session, and the snapshot taken before each one")
+    p = cmd("watch", "live session dashboard: proof, edits, spend, risk, false claims")
+    p.add_argument("--once", action="store_true", help="print one snapshot and exit (default in --json)")
+    p.add_argument("--interval", type=float, default=1.0, help="refresh period in seconds (default 1)")
+    cmd("budget", "token and dollar spend for this session against any cap")
+    p = cmd("ci", "markdown proof report for a PR, plus a test-inventory diff against git")
+    p.add_argument("--out", metavar="FILE", help="write the markdown report to this file")
+    p.add_argument("--base", metavar="REF", help="git ref to compare tests against (default: PR base or main)")
+    p.add_argument("--diff-only", action="store_true", help="only the test-inventory diff, no session proof")
+    p.add_argument("--comment", action="store_true", help="post or update the report as a PR comment (GITHUB_TOKEN)")
+    p.add_argument("--pr", type=int, help="pull request number for --comment")
+    p.add_argument("--repo", help="owner/name for --comment (default: GITHUB_REPOSITORY)")
 
     r = group(cmd("swarm", "fan small, checkable tasks out to a cheap model",
                   'examples:\n  keelyard swarm plan "fix total() for SAVE10" --json > tasks.json\n'
@@ -544,6 +582,13 @@ def do_status(a):
             "requirements": b.requirements, "state": pf.state(), "proven": pf.state() == "proven", "missing": gaps,
             "gate": gate_status(cfg), "evidence": pf.levels()}
     data["guarded"] = data["gate"]["state"] == "hooked"
+    try:
+        from . import audit, budget, risk
+        data["audit"] = audit.evaluate(cfg, sid)
+        data["budget"] = budget.status(cfg, sid)
+        data["risk"] = risk.recent(cfg, 8)
+    except Exception:  # noqa: BLE001
+        pass
     if _human(a):
         ui.heading("keelyard status", ui.tilde(root))
         ui.out.print("\n  [muted]agents[/]    " + "   ".join(
@@ -858,6 +903,101 @@ def do_state(a):
     if _human(a):
         print(text or "no work state yet. Record a decision: keelyard state decision \"...\" --ref path:line")
     return 0, {"state": text, "items": ws.load()}
+
+
+def do_audit(a):
+    from . import audit, ui
+
+    cfg = _cfg()
+    data = audit.evaluate(cfg)
+    if _human(a):
+        ui.heading("keelyard audit", f"session {data['session']}")
+        if not data["claims"]:
+            ui.out.print("  [muted]no clear claims about tests in the session transcript[/]")
+        for c in data["claims"]:
+            ui.line("ok", c["kind"], c["text"])
+        for lie in data["lies"]:
+            ui.line("bad", "false claim", f"“{lie['text']}”, but {lie['evidence']}")
+        if data["ok"] and data["claims"]:
+            ui.out.print("  [ok]claims match the recorded runs[/]")
+    return (0 if data["ok"] else 3), data
+
+
+def do_risk(a):
+    from . import risk, ui
+
+    cfg = _cfg()
+    rows = risk.recent(cfg)
+    data = {"events": rows}
+    if _human(a):
+        ui.heading("keelyard risk", f"{len(rows)} recorded edit{'s' * (len(rows) != 1)}")
+        if not rows:
+            ui.out.print("  [muted]no scored edits yet[/]")
+        for e in rows:
+            detail = ", ".join(f"{r['path']} ({r['why']})" for r in e.get("reasons") or [])
+            step = f"snapshot #{e['step']}" if e.get("step") else "no snapshot"
+            ui.line("warn" if e.get("level") in ("high", "critical") else "ok", e.get("level", "?"), f"{step} · {detail}")
+    return 0, data
+
+
+def do_watch(a):
+    from . import watch
+
+    cfg = _cfg()
+    once = a.once or bool(a.json)
+    data = watch.dashboard(cfg) if once else watch.run(cfg, once=False, interval=a.interval)
+    if once and _human(a):
+        print(watch.render(data))
+    return 0, data
+
+
+def do_budget(a):
+    from . import budget, ui
+
+    cfg = _cfg()
+    data = budget.status(cfg)
+    if _human(a):
+        ui.heading("keelyard budget", "this session")
+        cap = f" / {data['max_tokens']:,}" if data.get("max_tokens") else " (no cap)"
+        usd = f"  ${data['cost_usd']:.4f}" if data.get("cost_usd") is not None else ""
+        flag = "  [bad]at cap[/]" if data.get("over") else ("  [warn]warning[/]" if data.get("warn") else "")
+        ui.out.print(f"  {data['tokens']:,} tokens{cap}{usd}{flag}")
+        if not data.get("source"):
+            ui.out.print("  [muted]no session transcript known yet; Claude Code sends it on hooks[/]")
+        if not data.get("enabled"):
+            ui.out.print("  [muted]set [budget].max_tokens or max_usd in .keelyard/config.toml to cap spend[/]")
+    return (3 if data.get("over") else 0), data
+
+
+def do_ci(a):
+    from . import ci, ui
+
+    cfg = _cfg()
+    if a.diff_only:
+        data = ci.inventory_diff(cfg, a.base)
+        if _human(a):
+            ui.heading("keelyard ci diff", data.get("base") or "no base")
+            if data["weakened"]:
+                for w in data["weakened"]:
+                    ui.line("bad", "weakened", w)
+            else:
+                ui.out.print("  [ok]no test weakening vs the base[/]")
+        body = None
+        code = 0 if data["ok"] else 3
+    else:
+        body, data = ci.report_md(cfg, a.base)
+        if a.out:
+            Path(a.out).write_text(body, encoding="utf-8")
+            data["written"] = str(Path(a.out).resolve())
+        if _human(a):
+            print(body, end="")
+        code = 0 if data["ok"] else 3
+    if a.comment:
+        posted = ci.comment(body or ci.report_md(cfg, a.base)[0], pr=a.pr, repo=a.repo)
+        data["comment"] = posted
+        if _human(a):
+            ui.out.print(f"  [ok]{posted['action']}[/] {posted.get('url') or ''}")
+    return code, data
 
 
 def do_usage(a):

@@ -22,6 +22,11 @@ everyday:
   code              outline a file, map the project, find a symbol
   memory            search past sessions across all your agents
   usage             tokens and cost from your local agent logs
+  audit             compare what the agent claimed about tests with the recorded runs
+  risk              risky edits in this session, and the snapshot taken before each one
+  watch             live session dashboard: proof, edits, spend, risk, false claims
+  budget            token and dollar spend for this session against any cap
+  ci                markdown proof report for a PR, plus a test-inventory diff against git
 
 more:
   swarm             fan small, checkable tasks out to a cheap model
@@ -31,6 +36,7 @@ more:
   install/uninstall wire or unwire one agent by hand
   filter            compact output piped on stdin
   recall            print the full output that `run` shortened
+  state             compact work state: requirements, decisions, changes, open questions
 
 options:
   -h, --help   show this help message and exit
@@ -53,6 +59,11 @@ commands:
     memory     search past sessions across all your agents
     state      compact work state: requirements, decisions, changes, open questions
     usage      tokens and cost from your local agent logs
+    audit      compare what the agent claimed about tests with the recorded runs
+    risk       risky edits in this session, and the snapshot taken before each one
+    watch      live session dashboard: proof, edits, spend, risk, false claims
+    budget     token and dollar spend for this session against any cap
+    ci         markdown proof report for a PR, plus a test-inventory diff against git
     swarm      fan small, checkable tasks out to a cheap model
     arena      run one task across agents and models, compare results
     bench      measure savings on your own machine
@@ -84,9 +95,9 @@ options:
   --no-agents           create the config but wire no agent
   --dry-run             print what would change and stop
   --preset {lean,balanced,max-quality}
-                        lean = fewest tokens (trimmed agent prompt/tools, capped output); balanced
-                        = default; max-quality = every keelyard tool over MCP. `keelyard uninstall
-                        <agent>` reverts it
+                        lean = default, fewest tokens (trimmed agent prompt/tools, capped output);
+                        balanced = all agent tools; max-quality = every keelyard tool over MCP.
+                        `keelyard uninstall <agent>` reverts it
   --codex-project-mcp   Codex: register the keelyard MCP server in this project's
                         .codex/config.toml instead of asking you to edit ~/.codex/config.toml
                         (Codex reads it only for trusted projects)
@@ -327,12 +338,12 @@ options:
 ### proof test
 
 ```text
-usage: keelyard proof test [-h] [--json] [--cmd TEST_CMD] {before,after}
+usage: keelyard proof test [-h] [--json] [--cmd TEST_CMD] [{before,after}]
 
 run the test command and record the result
 
 positional arguments:
-  {before,after}
+  {before,after}  before or after the change (default: after)
 
 options:
   -h, --help      show this help message and exit
@@ -575,6 +586,98 @@ examples:
   keelyard usage --by model
 ```
 
+## audit
+
+```text
+usage: keelyard audit [-h] [--json]
+
+compare what the agent claimed about tests with the recorded runs
+
+options:
+  -h, --help  show this help message and exit
+  --json      print one JSON object on stdout (for scripts and agents)
+
+examples:
+  keelyard audit
+  keelyard audit --json
+```
+
+## risk
+
+```text
+usage: keelyard risk [-h] [--json]
+
+risky edits in this session, and the snapshot taken before each one
+
+options:
+  -h, --help  show this help message and exit
+  --json      print one JSON object on stdout (for scripts and agents)
+
+examples:
+  keelyard risk
+  keelyard risk --json
+```
+
+## watch
+
+```text
+usage: keelyard watch [-h] [--json] [--once] [--interval INTERVAL]
+
+live session dashboard: proof, edits, spend, risk, false claims
+
+options:
+  -h, --help           show this help message and exit
+  --json               print one JSON object on stdout (for scripts and agents)
+  --once               print one snapshot and exit (default in --json)
+  --interval INTERVAL  refresh period in seconds (default 1)
+
+examples:
+  keelyard watch --once            # one snapshot, then exit
+  keelyard watch                   # refresh until Ctrl-C
+  keelyard watch --once --json
+```
+
+## budget
+
+```text
+usage: keelyard budget [-h] [--json]
+
+token and dollar spend for this session against any cap
+
+options:
+  -h, --help  show this help message and exit
+  --json      print one JSON object on stdout (for scripts and agents)
+
+examples:
+  keelyard budget
+  keelyard budget --json
+```
+
+## ci
+
+```text
+usage: keelyard ci [-h] [--json] [--out FILE] [--base REF] [--diff-only] [--comment] [--pr PR]
+                   [--repo REPO]
+
+markdown proof report for a PR, plus a test-inventory diff against git
+
+options:
+  -h, --help   show this help message and exit
+  --json       print one JSON object on stdout (for scripts and agents)
+  --out FILE   write the markdown report to this file
+  --base REF   git ref to compare tests against (default: PR base or main)
+  --diff-only  only the test-inventory diff, no session proof
+  --comment    post or update the report as a PR comment (GITHUB_TOKEN)
+  --pr PR      pull request number for --comment
+  --repo REPO  owner/name for --comment (default: GITHUB_REPOSITORY)
+
+examples:
+  keelyard ci                      # markdown report + test diff vs main
+  keelyard ci --out report.md
+  keelyard ci --diff-only --base origin/main
+  keelyard ci --comment --pr 42    # post or update the PR comment (needs GITHUB_TOKEN)
+```
+
 ## swarm
 
 ```text
@@ -690,7 +793,8 @@ examples:
 ## install
 
 ```text
-usage: keelyard install [-h] [--json] [--global] [--no-terse] [--codex-project-mcp]
+usage: keelyard install [-h] [--json] [--global] [--no-terse]
+                        [--preset {lean,balanced,max-quality}] [--codex-project-mcp]
                         [{claude,codex,opencode}]
 
 wire one agent in this project
@@ -703,6 +807,8 @@ options:
   --json                print one JSON object on stdout (for scripts and agents)
   --global              wire at user level (all agents if none named)
   --no-terse            leave out the terse-output rule
+  --preset {lean,balanced,max-quality}
+                        lean = default, fewest tokens; see `keelyard init --help`
   --codex-project-mcp   Codex: register the keelyard MCP server in this project's
                         .codex/config.toml instead of asking you to edit ~/.codex/config.toml
                         (Codex reads it only for trusted projects)

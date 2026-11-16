@@ -24,7 +24,8 @@ def help_of(*args: str) -> str:
 def cli() -> None:
     groups = {"init": [], "doctor": [], "status": [], "selftest": [], "rewind": ["list", "show", "to", "fork", "snap"],
               "proof": ["status", "add", "check", "test", "shot", "report"], "run": [], "filter": [], "recall": [],
-              "code": ["outline", "map", "find"], "memory": ["index", "search", "stats"], "usage": [], "swarm": ["run"],
+              "code": ["outline", "map", "find"], "memory": ["index", "search", "stats"], "usage": [],
+              "audit": [], "risk": [], "watch": [], "budget": [], "ci": [], "swarm": ["run"],
               "arena": ["run", "render"], "bench": [], "install": [], "uninstall": []}
     md = ["# CLI reference", "", "Generated from `keelyard --help` by `docs/demo/gen_reference.py`.", "",
           "Every command accepts `--json` and prints exactly one JSON object with `ok` and `exit` keys.", "",

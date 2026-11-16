@@ -153,12 +153,18 @@ gives your config files back byte for byte. Latest `main` instead of the PyPI re
   The agent is told to answer with results only (opt out: `--no-terse`).
 - **Memory, usage, swarm, arena.** Search past sessions of all three agents, see token use from local logs,
   send small checked tasks to a free/cheap model, compare agents on one task.
+- **Audit, risk, budget, watch, CI.** `keelyard audit` compares what the agent *claimed* about tests with the
+  recorded runs (only clear claims; "if the tests pass" is ignored). Risky writes (tests, CI, secrets, lockfiles)
+  are scored and snapshotted *before* the edit. Optional `[budget]` caps deny further edits when a token or
+  dollar limit is crossed. `keelyard watch` is a live dashboard. `keelyard ci` writes a PR markdown report and
+  can diff the test inventory against `main` in GitHub Actions, even when `.keelyard` was not uploaded.
 
 ### Without vs with keelyard
 
 | | Without | With keelyard |
 |---|---|---|
 | Agent says "done" | You take its word, then run the tests yourself | It can't stop until tests pass on the current files; the proof is shown |
+| Agent says "all tests passed" when they didn't | Easy to miss in a long transcript | `keelyard audit` flags the claim against the recorded run |
 | Agent deletes or skips a failing test | Easy to miss in a long diff | Fewer tests, new `skip`/`xfail` or removed asserts keep the proof open |
 | A step breaks something | `git stash`/manual undo, if you committed in time | `keelyard rewind to <n>`, and the rewind itself can be undone |
 | 3,000 lines of passing test output | All of it goes into the context window | Errors, warnings and `file:line` kept, the rest collapsed |

@@ -135,6 +135,12 @@ def handle(event: str, payload: dict, cfg: config.Config) -> dict | None:
     sav = cfg.section("saver")
 
     brain = cfg.section("brain")
+    try:
+        from .audit import remember_transcript
+
+        remember_transcript(cfg, sid, payload)
+    except Exception:  # noqa: BLE001
+        pass
 
     if event == "SessionStart":
         if payload.get("source") in ("compact", "clear"):
@@ -167,7 +173,26 @@ def handle(event: str, payload: dict, cfg: config.Config) -> dict | None:
         b = budget_nudge(cfg, payload)
         if b and Nudger(cfg, sid).allow("budget"):
             notes.append(b)
+        try:
+            from .budget import message
+            from .budget import status as spend_status
+
+            st = spend_status(cfg, sid)
+            if st.get("warn") and Nudger(cfg, sid).allow("spend"):
+                notes.append(message(st))
+        except Exception:  # noqa: BLE001
+            pass
         return _ctx("UserPromptSubmit", "\n\n".join(notes)) if notes else None
+
+    if event == "PreToolUse" and tool not in EDIT_TOOLS_READ:
+        try:
+            from .budget import guard as spend_guard
+
+            blocked = spend_guard(cfg, sid)
+            if blocked:
+                return blocked
+        except Exception:  # noqa: BLE001
+            pass
 
     if event == "PreToolUse" and tool in SHELL_TOOLS:
         from .brain import Nudger, destructive
@@ -200,6 +225,20 @@ def handle(event: str, payload: dict, cfg: config.Config) -> dict | None:
             if not has_tests_nearby(cfg.root, rel) and Nudger(cfg, sid).allow("no-tests", rel):
                 return _ctx("PreToolUse", f"keelyard: no tests found for {rel}. Add or point to a test that covers "
                                           "this change, so proof_run_tests can show it works.")
+        try:
+            from .risk import deny as risk_deny
+            from .risk import nudge as risk_nudge
+            from .risk import prepare as risk_prepare
+
+            ev = risk_prepare(cfg, sid, _edited_files(tin), tin)
+            denied = risk_deny(ev, cfg)
+            if denied:
+                return denied
+            risk_msg = risk_nudge(ev, cfg)
+            if risk_msg and Nudger(cfg, sid).allow("risk", ev.get("level", "")):
+                return _ctx("PreToolUse", risk_msg, systemMessage=risk_msg)
+        except Exception:  # noqa: BLE001
+            pass
         return None
 
     if event == "PreCompact":
@@ -295,6 +334,26 @@ def handle(event: str, payload: dict, cfg: config.Config) -> dict | None:
             return blocked, b.blocks
 
         blocked, blocks = pf._update(decide)
+        lies = []
+        try:
+            if cfg.section("audit").get("enabled", True):
+                from .audit import block_lines, evaluate
+
+                lies = block_lines(evaluate(cfg, sid))
+        except Exception:  # noqa: BLE001
+            lies = []
+        if lies and opts["gate"] and cfg.section("audit").get("block", True):
+            # A false claim keeps the gate closed even when the other gaps were already cleared.
+            if not blocked and not gaps:
+                def decide_lie(b):
+                    blocked_l = b.blocks < int(opts["max_blocks"])
+                    b.gate.append({"ts": time.time(), "blocked": blocked_l, "open": len(lies)})
+                    b.gate = b.gate[-50:]
+                    if blocked_l:
+                        b.blocks += 1
+                    return blocked_l, b.blocks
+                blocked, blocks = pf._update(decide_lie)
+            gaps = list(gaps) + lies
         if not gaps or not opts["gate"]:
             return None
         if not blocked:

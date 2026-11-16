@@ -1,5 +1,31 @@
 # Changelog
 
+## 1.3.0 (Nov 16, 2026)
+
+Session trust: catch a false "tests passed", score risky edits before they land, cap spend, and report it on a PR.
+
+- **Audit (`keelyard audit`).** Reads the agent's session transcript and scores only clear, completed claims
+  about tests ("all tests passed", "I didn't change the tests"). Hypotheticals ("if the tests pass") are ignored.
+  A claim is a lie when it disagrees with the recorded test run or the test-inventory check. The Stop hook adds
+  those lines to the proof-gate message. Conservative on purpose: vague praise is not scored.
+- **Risk (`keelyard risk`).** Writes to tests, CI, deploy files, lockfiles, auth or secrets are scored. At or
+  above `medium` (configurable) keelyard snapshots *before* the edit, so rewind still has the pre-edit tree.
+  High/critical edits nudge the agent. Denying an edit is off by default (`[risk].block = "off"`).
+- **Budget (`keelyard budget`).** Optional `[budget].max_tokens` / `max_usd` caps. When a cap is crossed, further
+  edits and shell commands are denied; Stop and rewind still work. Spend comes from the agent's own transcript
+  (Claude Code sends `transcript_path` on hooks). Cost uses only the prices you put in `[prices]`; keelyard
+  ships no price table. Caps default to 0 (off).
+- **Watch (`keelyard watch`).** A live dashboard of proof, edits, spend, risk and false claims. `--once` prints
+  one snapshot (and is implied by `--json`). No model calls.
+- **CI report (`keelyard ci`).** Markdown proof + audit + spend, plus a test-inventory diff against a git base
+  (PR base or `main`). The diff does not need a keelyard session, so it belongs in GitHub Actions even when
+  `.keelyard` was not uploaded. `--comment` posts or updates a single PR comment (needs `GITHUB_TOKEN`; the
+  token is never printed). Composite action: `akobirjontulqinovfuture/keelyard/.github/actions/proof-report`.
+- Fixed `CITATION.cff`: `cff-version` is the citation-file format (1.2.0) again; `version` is the software version.
+
+This release is not published to PyPI until the maintainer does so. Install from git to use 1.3.0.
+
+
 ## 1.2.1 (Oct 29, 2026)
 
 Listing metadata only, no code changes.

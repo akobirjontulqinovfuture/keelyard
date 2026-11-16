@@ -119,6 +119,11 @@ CASES: list[Case] = [
     Case("usage", "usage --by day", ["usage", "--json"], check=lambda d, p: d["rows"] and d["rows"][0]["input"] == 10),
     Case("usage", "usage --by model", ["usage", "--by", "model", "--json"], check=lambda d, p: d["rows"][0]["key"].endswith("m1")),
     Case("usage", "usage --by agent", ["usage", "--by", "agent", "--json"], check=has("rows")),
+    Case("trust", "audit", ["audit", "--json"], check=lambda d, p: d["ok"] and d["claims"] == []),
+    Case("trust", "risk", ["risk", "--json"], check=has("events")),
+    Case("trust", "watch --once", ["watch", "--once", "--json"], check=lambda d, p: d["session"] and "proof" in d),
+    Case("trust", "budget", ["budget", "--json"], check=has("tokens")),
+    Case("trust", "ci --diff-only", ["ci", "--diff-only", "--json"], check=has("ok")),
     # swarm, arena, bench
     Case("swarm", "swarm run missing file", ["swarm", "run", "nope.json", "--json"], exit=1),
     Case("swarm", "swarm run bad JSON", ["swarm", "run", "app.py", "--json"], exit=1),

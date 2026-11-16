@@ -30,6 +30,15 @@ them up. Each item links to an issue where one exists. Ideas welcome in
 - Community numbers from real transcripts ([#5](https://github.com/akobirjontulqinovfuture/keelyard/issues/5))
 - `go test` and `jest` in the filter benchmark ([#6](https://github.com/akobirjontulqinovfuture/keelyard/issues/6))
 
+
+## 1.3: session trust
+
+- Catch false "tests passed" / "I didn't change the tests" claims against recorded runs (`keelyard audit`, done in 1.3.0)
+- Per-change risk scoring and a snapshot before risky edits (`keelyard risk`, done in 1.3.0)
+- Optional session token / dollar cap that denies further edits (`keelyard budget`, done in 1.3.0)
+- Live session dashboard (`keelyard watch`, done in 1.3.0)
+- PR markdown report and a test-inventory diff for CI (`keelyard ci`, done in 1.3.0)
+
 ## Later
 
 - Per-session token recording for every agent, with a `doctor` warning when savings drop

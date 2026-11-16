@@ -45,6 +45,31 @@ critic = false
 budget_tokens = 200000
 task_budget_tokens = 20000
 
+
+[audit]
+# Compare what the agent claimed about tests with the recorded runs and the test inventory.
+enabled = true
+# When a false claim is found, the Stop hook also blocks (if the proof gate is on).
+block = true
+
+[risk]
+# Snapshot *before* an edit at or above this level (low, medium, high, critical). off = never.
+enabled = true
+checkpoint = "medium"
+# Nudge the agent at or above this level.
+nudge = "high"
+# Deny the edit at or above this level. off = never deny, only snapshot and nudge.
+block = "off"
+
+[budget]
+# 0 = off. When the current session crosses a cap, further edits and shell commands are denied
+# (Stop still works, and so does rewind). Spend is read from the agent transcript when its path is known.
+max_tokens = 0
+max_usd = 0
+# Warn (do not block) at this fraction of a cap.
+warn_at = 0.8
+block = true
+
 [mcp]
 # Tools the MCP server offers. Every schema costs tokens in every session, so the default is the 14 the
 # workflow needs. "all" adds outline, project_map, rewind_diff, usage_report, route_task, swarm_plan,

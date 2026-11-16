@@ -82,3 +82,16 @@ gate plus undo, with output trimming as a side benefit. See [Alternatives](alter
 
 `keelyard uninstall claude` (or `codex`, `opencode`) restores the files `init` changed. `keelyard uninstall
 --global` does the same for user-level config.
+
+## How do I catch an agent that says the tests passed when they didn't?
+
+`keelyard audit` reads the session transcript and compares clear claims ("all tests passed", "I didn't change
+the tests") with the recorded test run and the test inventory. Hypotheticals ("if the tests pass") are ignored.
+The Stop hook adds a false claim to the proof-gate message. See [Session trust](guide/session-trust.md).
+
+## Can I cap how many tokens a coding-agent session may use?
+
+Yes, optionally. Set `[budget].max_tokens` (or `max_usd` with your own `[prices]`) in `.keelyard/config.toml`.
+When the cap is crossed, further edits and shell commands are denied; Stop and rewind still work. Caps default
+to off. Spend is read from the agent's transcript when keelyard knows its path. See [Session trust](guide/session-trust.md).
+

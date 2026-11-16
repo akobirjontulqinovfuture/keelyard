@@ -23,6 +23,7 @@ After that it takes a first snapshot.
 - [How to roll back Claude Code or Codex changes](how-to/roll-back-claude-code-codex-changes.md), including shell-made changes
 - [How to make an AI coding agent prove its work before "done"](how-to/make-ai-coding-agent-prove-its-work.md) and stop it skipping tests
 - [How to reduce Claude Code token usage](how-to/reduce-claude-code-token-usage.md), with measured results and their limits
+- [Catch a false “tests passed”, score risky edits, cap spend](guide/session-trust.md)
 
 ## The pieces
 

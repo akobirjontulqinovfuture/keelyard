@@ -49,6 +49,7 @@ nav:
       - Rewind: guide/rewind.md
       - Smaller context: guide/context.md
       - Memory and usage: guide/memory.md
+      - Session trust: guide/session-trust.md
       - Always on: guide/brain.md
       - Presets: guide/presets.md
       - Swarm: guide/swarm.md
