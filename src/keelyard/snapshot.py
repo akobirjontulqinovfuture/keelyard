@@ -44,6 +44,20 @@ EXCLUDE = (".keelyard/\n.git/\nnode_modules/\n.venv/\n__pycache__/\n"
            ".claude/skills/keelyard/\n.claude/commands/keelyard/\n.opencode/plugin/keelyard.js\n.opencode/plugins/keelyard.js\n"
            ".opencode/command/keelyard-*.md\n")
 
+def _skill_exclude() -> str:
+    """Slash-command copies of shipped skills: rewind must not revert install wiring."""
+    try:
+        from .skills import shipped_skills
+        lines = []
+        for s in shipped_skills():
+            lines += [f".claude/commands/{s.name}.md", f".codex/prompts/{s.name}.md",
+                      f".opencode/command/{s.name}.md"]
+        return "".join(f"{ln}\n" for ln in lines)
+    except (OSError, ValueError):
+        return ""
+
+
+
 
 # Secrets never enter a snapshot (and so never a diff, report or rewind). Example files stay in.
 SECRETS = (".env\n.env.*\n!.env.example\n!.env.sample\n!.env.template\n*.pem\n*.key\n*.p12\n*.pfx\n*.jks\n*.keystore\n"
@@ -96,7 +110,7 @@ class Shadow:
         """EXCLUDE + secrets (unless [rewind].include_secrets) + your own [rewind].exclude patterns."""
         opts = self.cfg.section("rewind")
         extra = "".join(f"{p}\n" for p in opts.get("exclude", []) or [])
-        return EXCLUDE + ("" if opts.get("include_secrets", False) else SECRETS) + extra
+        return EXCLUDE + _skill_exclude() + ("" if opts.get("include_secrets", False) else SECRETS) + extra
 
     def _ensure(self) -> None:
         self.cfg.require_project()

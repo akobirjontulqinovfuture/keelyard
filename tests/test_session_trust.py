@@ -324,3 +324,13 @@ def test_ci_post_comment_rejects_bad_repo_or_pr():
         post_comment("x", 1, "not a repo", "tok")
     with pytest.raises(RuntimeError, match="positive"):
         post_comment("x", 0, "a/b", "tok")
+
+
+def test_ci_ignores_missing_github_base_ref(cfg, project, monkeypatch):
+    """A CI GITHUB_BASE_REF that is not in this repo must not fail `ci --diff-only`."""
+    monkeypatch.setenv("GITHUB_BASE_REF", "main")
+    monkeypatch.delenv("GITHUB_BASE_SHA", raising=False)
+    from keelyard.ci import default_base, inventory_diff
+    assert default_base(project) is None
+    diff = inventory_diff(cfg)
+    assert diff["ok"] is True and diff["base"] is None
