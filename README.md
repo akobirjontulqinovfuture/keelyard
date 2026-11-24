@@ -1,5 +1,7 @@
 <!-- mcp-name: io.github.akobirjontulqinovfuture/keelyard -->
 
+[![akobirjontulqinovfuture/keelyard MCP server](https://glama.ai/mcp/servers/akobirjontulqinovfuture/keelyard/badges/score.svg)](https://glama.ai/mcp/servers/akobirjontulqinovfuture/keelyard)
+
 <div align="center">
 
 <a href="https://github.com/akobirjontulqinovfuture/keelyard">
