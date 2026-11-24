@@ -240,7 +240,14 @@ def test_audit_persist_false_does_not_write(cfg, project):
     assert data["session"] == "s1" and data["claims"]
 
 
-def test_transcript_path_must_stay_under_allowlist(cfg, project, tmp_path):
+def test_transcript_path_must_stay_under_allowlist(cfg, project, tmp_path, monkeypatch):
+    # Home is on the allowlist. On Windows, pytest's tmp_path lives under
+    # %LOCALAPPDATA%\Temp, i.e. under home, so a sibling of the project would
+    # be allowed and this test failed on windows-latest (release 1.3.1 onward).
+    # Point home at an empty sibling folder so `outside` is truly off the list.
+    fake_home = tmp_path / "fake-home"
+    fake_home.mkdir()
+    monkeypatch.setattr(Path, "home", staticmethod(lambda: fake_home))
     outside = tmp_path / "secret.jsonl"
     write_claude_transcript(outside, ["All tests passed."])
     hooks.handle("SessionStart", claude("SessionStart", source="startup", transcript_path=str(outside)), cfg)
