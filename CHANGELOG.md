@@ -6,6 +6,9 @@
   as slash commands: Claude Code `.claude/commands/<name>.md`, Codex `.codex/prompts/<name>.md` (and
   `~/.codex/prompts` when installed with `--global`), OpenCode `.opencode/command/<name>.md`. Uninstall restores
   a file that was already there. `keelyard doctor` reports each command.
+- **CI.** `keelyard ci` only uses `GITHUB_BASE_REF` / `GITHUB_BASE_SHA` when that ref exists in the
+  current repository, so a GitHub Actions job no longer treats a missing `main` in a throwaway project as a failed diff.
+
 
 
 ## 1.3.1 (Nov 17, 2026)

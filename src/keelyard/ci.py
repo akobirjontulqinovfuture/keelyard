@@ -38,17 +38,28 @@ def _git(root: Path, *args: str) -> str:
     return r.stdout
 
 
+def _rev(root: Path, ref: str) -> str | None:
+    r = subprocess.run(["git", "-C", str(root), "rev-parse", "--verify", "-q", ref],
+                       capture_output=True, text=True)
+    return (r.stdout.strip() or None) if r.returncode == 0 else None
+
+
 def default_base(root: Path) -> str | None:
+    # CI may export GITHUB_BASE_REF for the workflow repo; only use it when that
+    # ref actually exists in *this* tree (a temp test repo often has no "main").
     env = os.environ.get("GITHUB_BASE_SHA") or os.environ.get("GITHUB_BASE_REF")
-    if env:
-        return env
-    for ref in ("origin/main", "origin/master", "main", "master"):
-        r = subprocess.run(["git", "-C", str(root), "rev-parse", "--verify", "-q", ref],
-                           capture_output=True, text=True)
-        if r.returncode == 0:
-            mb = subprocess.run(["git", "-C", str(root), "merge-base", "HEAD", ref],
-                                capture_output=True, text=True)
-            return (mb.stdout.strip() or r.stdout.strip()) if mb.returncode == 0 else r.stdout.strip()
+    candidates = ([env] if env else []) + ["origin/main", "origin/master", "main", "master"]
+    seen: set[str] = set()
+    for ref in candidates:
+        if not ref or ref in seen:
+            continue
+        seen.add(ref)
+        sha = _rev(root, ref)
+        if not sha:
+            continue
+        mb = subprocess.run(["git", "-C", str(root), "merge-base", "HEAD", ref],
+                            capture_output=True, text=True)
+        return (mb.stdout.strip() or sha) if mb.returncode == 0 else sha
     return None
 
 
