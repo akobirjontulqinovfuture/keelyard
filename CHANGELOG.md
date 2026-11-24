@@ -1,5 +1,13 @@
 # Changelog
 
+## Unreleased
+
+- **Agent skills (`/keesite`, `/keepromo`).** `keelyard install` copies shipped skills from `keelyard/skills/<name>/SKILL.md`
+  as slash commands: Claude Code `.claude/commands/<name>.md`, Codex `.codex/prompts/<name>.md` (and
+  `~/.codex/prompts` when installed with `--global`), OpenCode `.opencode/command/<name>.md`. Uninstall restores
+  a file that was already there. `keelyard doctor` reports each command.
+
+
 ## 1.3.1 (Nov 17, 2026)
 
 Bug fixes for the 1.3.0 session-trust commands. No new features.

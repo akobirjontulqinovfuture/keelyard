@@ -421,6 +421,37 @@ def do_init(a):
     return 0, data
 
 
+
+def _skill_checks(root: Path) -> list[tuple[str, str, str, str]]:
+    """Report each shipped slash command and whether install has placed it."""
+    from .adapters.install import AGENTS, global_paths, installed, installed_global
+    from .skills import global_dest, project_dest, shipped_skills
+
+    rows = []
+    paths = global_paths()
+    try:
+        skills = shipped_skills()
+    except (OSError, ValueError) as e:
+        return [("agents", "warn", "skills", str(e))]
+    wired = [a for a in AGENTS if installed(a, root) or installed_global(a)]
+    for skill in skills:
+        have = []
+        for a in AGENTS:
+            if installed(a, root) and project_dest(a, root, skill.name).is_file():
+                have.append(a)
+            elif installed_global(a) and global_dest(a, paths, skill.name).is_file():
+                have.append(f"{a} (global)")
+        if have:
+            rows.append(("agents", "ok", f"/{skill.name}", "slash command for " + ", ".join(have)))
+        elif wired:
+            rows.append(("agents", "warn", f"/{skill.name}",
+                         "shipped but not installed. Hint: keelyard install " + wired[0]))
+        else:
+            rows.append(("agents", "skip", f"/{skill.name}",
+                         "shipped; run `keelyard install` to add this slash command"))
+    return rows
+
+
 def _checks() -> list[tuple[str, str, str, str]]:
     """(section, state, label, detail)."""
     import importlib.util
@@ -514,6 +545,7 @@ def _checks() -> list[tuple[str, str, str, str]]:
             rows.append(("agents", "warn", x, f"installed but not wired. Hint: keelyard install {x}"))
         else:
             rows.append(("agents", "skip", x, "not installed"))
+    rows.extend(_skill_checks(root))
     return rows
 
 

@@ -361,6 +361,7 @@ def install_guides(agent: str, root: Path) -> list[str]:
         for name in WORKFLOWS:
             (cmds / f"keelyard-{name}.md").write_text(_command(name), encoding="utf-8")
         done.append("/keelyard-plan, /keelyard-debug, /keelyard-review (commands)")
+    done += install_skills(agent, root)
     return done
 
 
@@ -382,6 +383,7 @@ def uninstall_guides(agent: str, root: Path) -> list[str]:
             if f.exists():
                 f.unlink()
                 done.append(str(f.relative_to(root)))
+    done += uninstall_skills(agent, root)
     return done
 
 
@@ -478,7 +480,8 @@ def uninstall(agent: str, root: Path) -> list[str]:
 TOUCHED = {"claude": [".claude/settings.json", ".mcp.json", "CLAUDE.md"],
            "codex": [".codex/hooks.json", ".codex/config.toml", "AGENTS.md"],
            "opencode": ["opencode.json", "AGENTS.md"]}
-EMPTY_DIRS = {"claude": [".claude/commands", ".claude/skills", ".claude"], "codex": [".codex"],
+EMPTY_DIRS = {"claude": [".claude/commands", ".claude/skills", ".claude"],
+              "codex": [".codex/prompts", ".codex"],
               "opencode": [".opencode/plugins", ".opencode/plugin", ".opencode/command", ".opencode/agent", ".opencode"]}
 ABSENT = b"\0keelyard: file did not exist\0"
 
@@ -533,6 +536,117 @@ def _restore_originals(agent: str, root: Path) -> None:
             d.rmdir()
 
 
+
+
+# --------------------------------------------------------------------------- shipped skills (slash commands)
+def _ours_bytes(raw: str, cur: bytes | None) -> bool:
+    if cur is None:
+        return False
+    return cur.replace(b"\r\n", b"\n") == raw.replace("\r\n", "\n").encode()
+
+
+def _write_skill(path: Path, raw: str, keep: Path) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    keep.parent.mkdir(parents=True, exist_ok=True)
+    if not keep.exists():
+        keep.write_bytes(path.read_bytes() if path.exists() else ABSENT)
+    path.write_text(raw, encoding="utf-8")
+
+
+def _restore_skill(path: Path, raw: str, keep: Path) -> bool:
+    """Put back the pre-install file, or delete one we created, if the user has not edited it since."""
+    cur = path.read_bytes() if path.exists() else None
+    if keep.exists():
+        orig = keep.read_bytes()
+        if orig == ABSENT:
+            if _ours_bytes(raw, cur):
+                path.unlink()
+                keep.unlink()
+                return True
+        elif _ours_bytes(raw, cur):
+            path.write_bytes(orig)
+            keep.unlink()
+            return True
+        keep.unlink()
+        return False
+    if _ours_bytes(raw, cur):
+        path.unlink()
+        return True
+    return False
+
+
+def install_skills(agent: str, root: Path) -> list[str]:
+    from ..skills import project_dest, rel_for, shipped_skills
+
+    names = []
+    for skill in shipped_skills():
+        dest = project_dest(agent, root, skill.name)
+        _write_skill(dest, skill.raw, _original(root, rel_for(agent, skill.name)))
+        names.append(f"/{skill.name}")
+    return [", ".join(names) + " (slash commands)"] if names else []
+
+
+def uninstall_skills(agent: str, root: Path) -> list[str]:
+    from ..skills import project_dest, rel_for, shipped_skills
+
+    done = []
+    for skill in shipped_skills():
+        dest = project_dest(agent, root, skill.name)
+        if _restore_skill(dest, skill.raw, _original(root, rel_for(agent, skill.name))):
+            done.append(rel_for(agent, skill.name))
+    return done
+
+
+def _global_skill_backup(path: Path) -> Path:
+    return path.with_name(path.name + ".keelyard-backup")
+
+
+def install_skills_global(agent: str, paths: dict[str, Path]) -> list[str]:
+    from ..skills import global_dest, shipped_skills
+
+    names = []
+    for skill in shipped_skills():
+        dest = global_dest(agent, paths, skill.name)
+        dest.parent.mkdir(parents=True, exist_ok=True)
+        bak = _global_skill_backup(dest)
+        if dest.exists() and not bak.exists() and not _ours_bytes(skill.raw, dest.read_bytes()):
+            shutil.copy2(dest, bak)
+        dest.write_text(skill.raw, encoding="utf-8")
+        names.append(str(dest))
+    return names
+
+
+def uninstall_skills_global(agent: str, paths: dict[str, Path]) -> list[str]:
+    from ..skills import global_dest, shipped_skills
+
+    done = []
+    for skill in shipped_skills():
+        dest = global_dest(agent, paths, skill.name)
+        bak = _global_skill_backup(dest)
+        cur = dest.read_bytes() if dest.exists() else None
+        if bak.exists():
+            if _ours_bytes(skill.raw, cur) or cur is None:
+                shutil.copy2(bak, dest)
+                done.append(str(dest))
+            bak.unlink()
+        elif _ours_bytes(skill.raw, cur):
+            dest.unlink()
+            done.append(str(dest))
+    return done
+
+
+def skill_targets(agent: str, root: Path, home: Path | None = None) -> list[Path]:
+    """Project and (if globally wired) user-level paths where a skill command would be installed."""
+    from ..skills import global_dest, project_dest, shipped_skills
+
+    paths = global_paths(home)
+    out = []
+    for skill in shipped_skills():
+        out.append(project_dest(agent, root, skill.name))
+        out.append(global_dest(agent, paths, skill.name))
+    return out
+
+
 # --------------------------------------------------------------------------- global (user-level) install
 TOML_START, TOML_END = "# keelyard:start", "# keelyard:end"
 
@@ -544,7 +658,7 @@ def global_paths(home: Path | None = None) -> dict[str, Path]:
     return {"claude_settings": h / ".claude" / "settings.json", "claude_json": h / ".claude.json",
             "claude_md": h / ".claude" / "CLAUDE.md", "claude_dir": h / ".claude",
             "codex_toml": h / ".codex" / "config.toml", "codex_hooks": h / ".codex" / "hooks.json",
-            "codex_md": h / ".codex" / "AGENTS.md",
+            "codex_md": h / ".codex" / "AGENTS.md", "codex_dir": h / ".codex",
             "opencode_json": oc / "opencode.json", "opencode_plugin": oc / "plugins" / "keelyard.js",
             "opencode_md": oc / "AGENTS.md", "opencode_dir": oc}
 
@@ -619,6 +733,7 @@ def install_global(agent: str, home: Path | None = None, terse: bool | None = No
         for name in WORKFLOWS:
             (cmds / f"{name}.md").write_text(_command(name), encoding="utf-8")
         done += [str(p["claude_settings"]), str(p["claude_json"]), str(p["claude_md"])]
+        done += install_skills_global("claude", p)
         _global_lean(agent, p, True)
     elif agent == "codex":
         for k in ("codex_toml", "codex_hooks", "codex_md"):
@@ -627,6 +742,7 @@ def install_global(agent: str, home: Path | None = None, terse: bool | None = No
         _toml_block(p["codex_toml"], f"[mcp_servers.keelyard]\ncommand = {json.dumps(_exe_path())}\nargs = [\"mcp\"]")
         _set_block(p["codex_md"], rules)
         done += [str(p["codex_toml"]), str(p["codex_hooks"]), str(p["codex_md"])]
+        done += install_skills_global("codex", p)
     else:
         for k in ("opencode_json", "opencode_md"):
             _backup(p[k])
@@ -640,6 +756,7 @@ def install_global(agent: str, home: Path | None = None, terse: bool | None = No
         for name in WORKFLOWS:
             (cmds / f"keelyard-{name}.md").write_text(_command(name), encoding="utf-8")
         done += [str(p["opencode_json"]), str(p["opencode_plugin"]), str(p["opencode_md"])]
+        done += install_skills_global("opencode", p)
         if not opencode_mcp():
             _global_lean(agent, p, True)
     _set_global_marker(agent, True)
@@ -724,6 +841,7 @@ def uninstall_global(agent: str, home: Path | None = None) -> list[str]:
             if d.is_dir():
                 shutil.rmtree(d)
                 done.append(str(d))
+        done += uninstall_skills_global("claude", p)
     elif agent == "codex":
         if _strip_hooks(p["codex_hooks"]):
             done.append(str(p["codex_hooks"]))
@@ -732,6 +850,7 @@ def uninstall_global(agent: str, home: Path | None = None) -> list[str]:
             done.append(str(p["codex_toml"]))
         if _set_block(p["codex_md"], None):
             done.append(str(p["codex_md"]))
+        done += uninstall_skills_global("codex", p)
     else:
         if _drop_key(p["opencode_json"], "mcp"):
             done.append(str(p["opencode_json"]))
@@ -745,6 +864,7 @@ def uninstall_global(agent: str, home: Path | None = None) -> list[str]:
             f = p["opencode_dir"] / "command" / f"keelyard-{name}.md"
             if f.exists():
                 f.unlink()
+        done += uninstall_skills_global("opencode", p)
     _set_global_marker(agent, False)
     return done
 
