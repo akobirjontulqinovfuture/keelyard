@@ -357,7 +357,10 @@ def _consent(a, changes: list, h: bool) -> bool:
     names = ", ".join(c.path for c in mods)
     if sys.stdin.isatty() and h:
         ui.out.print()
-        return input("  Apply these changes? Originals are backed up. [y/N] ").strip().lower() in ("y", "yes")
+        try:
+            return input("  Apply these changes? Originals are backed up. [y/N] ").strip().lower() in ("y", "yes")
+        except EOFError:  # a "tty" with nobody typing (some Windows runners): same as not interactive
+            pass
     raise Fail(f"keelyard would change your own config: {names}. Nothing was changed. "
                "Hint: review it with --dry-run, then rerun with --yes.")
 
