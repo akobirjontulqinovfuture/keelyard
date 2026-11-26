@@ -90,7 +90,9 @@ def test_codex_project_mcp_keeps_user_toml(home, tmp_path):  # noqa: F811
     p = _proj(tmp_path)
     (p / ".codex").mkdir()
     (p / ".codex" / "config.toml").write_text('model = "x"\n', encoding="utf-8")
-    assert ky("init", "--agent", "codex", "--codex-project-mcp", cwd=p).returncode == 0
+    assert ky("init", "--agent", "codex", "--codex-project-mcp", cwd=p).returncode == 1  # your file: needs consent
+    assert (p / ".codex" / "config.toml").read_text(encoding="utf-8") == 'model = "x"\n'
+    assert ky("init", "--agent", "codex", "--codex-project-mcp", "--yes", cwd=p).returncode == 0
     assert ky("uninstall", "codex", cwd=p).returncode == 0
     assert (p / ".codex" / "config.toml").read_text(encoding="utf-8").strip() == 'model = "x"'
 
@@ -121,3 +123,43 @@ def test_baseline_names_your_files_not_agent_setup(home, tmp_path):  # noqa: F81
     out = ky("rewind", cwd=p).stdout
     line = next(ln for ln in out.splitlines() if "#1" in ln)
     assert "a.py" in line and "agent setup" in line and "CLAUDE.md" not in line
+
+
+def test_existing_agent_config_needs_consent_dry_run_shows_diff(home, tmp_path):  # noqa: F811
+    p = _proj(tmp_path)
+    (p / ".claude").mkdir()
+    mine = '{"permissions": {"allow": ["Bash(ls)"]}}\n'
+    (p / ".claude" / "settings.json").write_text(mine, encoding="utf-8")
+    r = ky("init", "--agent", "claude", "--dry-run", cwd=p)
+    assert r.returncode == 0 and "would change your file" in r.stdout and "+++ b/.claude/settings.json" in r.stdout
+    r = ky("init", "--agent", "claude", "--dry-run", "--json", cwd=p)
+    assert any(c["path"] == ".claude/settings.json" and c["kind"] == "modify" for c in json.loads(r.stdout)["diff"])
+    r = ky("install", "claude", cwd=p)  # no tty, no --yes: refuse, change nothing
+    assert r.returncode == 1 and "--yes" in r.stdout + r.stderr
+    assert (p / ".claude" / "settings.json").read_text(encoding="utf-8") == mine
+    assert not (p / "CLAUDE.md").exists() and not (p / ".mcp.json").exists()
+    assert ky("install", "claude", "--yes", cwd=p).returncode == 0
+    assert "keelyard" in (p / ".claude" / "settings.json").read_text(encoding="utf-8")
+    assert (p / ".keelyard" / "originals" / ".claude__settings.json.orig").read_text(encoding="utf-8") == mine
+    assert ky("uninstall", "claude", cwd=p).returncode == 0
+    assert (p / ".claude" / "settings.json").read_text(encoding="utf-8") == mine  # byte-for-byte restore
+
+
+def test_new_files_only_need_no_consent(home, tmp_path):  # noqa: F811
+    p = _proj(tmp_path)
+    assert ky("init", "--agent", "claude", cwd=p).returncode == 0
+
+
+def test_opencode_json_untouched_by_default_trim_is_opt_in(home, tmp_path):  # noqa: F811
+    p = _proj(tmp_path)
+    mine = '{"theme": "dark"}\n'
+    (p / "opencode.json").write_text(mine, encoding="utf-8")
+    assert ky("init", "--agent", "opencode", cwd=p).returncode == 0  # nothing of yours changes: no prompt
+    assert (p / "opencode.json").read_text(encoding="utf-8") == mine
+    assert ky("init", "--agent", "opencode", cwd=p, inp="").returncode == 0
+    r = ky("install", "opencode", "--trim", cwd=p)
+    assert r.returncode == 1  # --trim edits opencode.json: consent needed
+    assert ky("install", "opencode", "--trim", "--yes", cwd=p).returncode == 0
+    assert "webfetch" in (p / "opencode.json").read_text(encoding="utf-8")
+    assert ky("uninstall", "opencode", cwd=p).returncode == 0
+    assert (p / "opencode.json").read_text(encoding="utf-8") == mine

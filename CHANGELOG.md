@@ -1,5 +1,26 @@
 # Changelog
 
+## Unreleased
+
+Safer install: keelyard no longer edits your agent config behind your back, and `lean` no longer disables agent tools.
+(From a user report: "it changes my own config, and lean is aggressive".)
+
+- **Consent.** `init`, `install` and `init --global` now preview the change and, when a config file of yours would
+  be modified (`settings.json`, `hooks.json`, `config.toml`, `opencode.json`, `CLAUDE.md`, `AGENTS.md`), show a
+  unified diff and ask. Not interactive: it refuses and changes nothing unless you pass `--yes`. `--dry-run`
+  prints the diff and stops (also in `--json` as `diff`). Originals are kept (`.keelyard/originals/`,
+  `<file>.keelyard-backup`) and `uninstall` restores them. Scripts and agents that ran `keelyard init` on a project
+  with existing config now need `--yes`.
+- **Lean is safe by default.** The default preset no longer replaces OpenCode's build prompt, no longer turns off
+  webfetch, websearch, task/subagents, skill, question, todo, grep, glob or execute, and no longer sets Claude Code
+  env caps. Those moved behind the new opt-in `--trim` flag (documented in `keelyard init --help`). Re-running
+  `init`/`install` without `--trim` removes a trim an older keelyard added. `opencode.json` is not touched at all
+  unless you opt in (`--trim`, or the OpenCode MCP server).
+- **No test suite, no test gate.** When the project has no tests (none detected, no `[proof].test_cmd`) lean leaves
+  `auto_test_after_edit` off, `doctor` does not call that drift, and the Stop gate does not ask for a test run. The
+  lean brief says "if it has any". A suite that appears later is picked up on the next session.
+- Honesty: the 14.2×/6.0× token numbers were measured with the restrictive extras, now `--trim`; README says so.
+
 ## 1.3.1 (Nov 17, 2026)
 
 Bug fixes for the 1.3.0 session-trust commands. No new features.

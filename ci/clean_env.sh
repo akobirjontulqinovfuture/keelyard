@@ -22,7 +22,7 @@ printf 'from app import add\n\ndef test_add():\n    assert add(2, 2) == 4\n' > t
 printf '# my notes\n' > CLAUDE.md
 git add -A && git -c user.name=ci -c user.email=ci@ci commit -qm project
 
-"$K" init --preset lean --agent claude --agent codex --agent opencode --codex-project-mcp
+"$K" init --yes --preset lean --agent claude --agent codex --agent opencode --codex-project-mcp
 "$K" doctor --json > "$WORK/doctor.json"
 "$BIN/python" - "$WORK/doctor.json" <<'PY'
 import json, sys

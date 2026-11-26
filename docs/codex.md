@@ -93,7 +93,7 @@ model, each hook event firing, the gate blocking a red "Done.", the gate opening
 
 - **Output filtering does not apply.** Codex hooks can't replace a shell result yet, so keelyard's log compression
   works through the MCP `run_compact` tool only, not on Codex's own shell calls.
-- **No lean switch for Codex tools.** The lean preset can turn some Claude Code / OpenCode tools off; Codex has no
+- **No `--trim` for Codex tools.** The opt-in `--trim` can turn some Claude Code / OpenCode tools off; Codex has no
   config for that, so on Codex lean means the shorter brief and AGENTS.md block.
 - **Token savings on Codex are not measured yet.** The e2e check uses a scripted model, which proves the wiring,
   not savings. Real-model numbers are on the [roadmap](https://github.com/akobirjontulqinovfuture/keelyard/blob/main/ROADMAP.md).

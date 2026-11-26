@@ -18,7 +18,8 @@ confirmation. `init --global` edits user-level config for every project, so it n
 2. Wire every agent for every project of this user:
 
    ```sh
-   keelyard init --global
+   keelyard init --global --dry-run   # show the diff of every file that would change; writes nothing
+   keelyard init --global --yes       # apply (without --yes it asks, or refuses when not interactive)
    ```
 
    | agent | files changed |
@@ -27,7 +28,8 @@ confirmation. `init --global` edits user-level config for every project, so it n
    | Codex | `~/.codex/config.toml` (`[mcp_servers.keelyard]` between `# keelyard:start/end`), `~/.codex/hooks.json`, `~/.codex/AGENTS.md` |
    | OpenCode | `~/.config/opencode/opencode.json` (MCP), `~/.config/opencode/plugin/keelyard.js`, `~/.config/opencode/AGENTS.md`, `command/keelyard-*.md` |
 
-   Existing settings are merged, not replaced. The first time a file is changed, the original is kept as
+   Existing settings are merged, not replaced, and only after the user approved the diff (`--yes`).
+   Tool settings (OpenCode build agent, Claude env) are untouched unless `--trim` is given. The first time a file is changed, the original is kept as
    `<file>.keelyard-backup`. Running it again is safe.
 
 3. Verify:
