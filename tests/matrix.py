@@ -44,6 +44,8 @@ def make_project(tmp: Path) -> tuple[Path, dict]:
          "message": {"role": "assistant", "model": "m1", "content": "done", "usage": {"input_tokens": 10, "output_tokens": 5}}}) + "\n")
     env = {**os.environ, "HOME": str(home), "XDG_DATA_HOME": str(tmp / "xdg"), "CLAUDE_CONFIG_DIR": str(home / ".claude"),
            "CODEX_HOME": str(home / ".codex"), "NO_COLOR": "1", "KEELYARD_ROOT": str(proj)}
+    for k in ("GITHUB_BASE_REF", "GITHUB_BASE_SHA"):  # a PR run names a base the throwaway repo does not have
+        env.pop(k, None)
     env.pop("FORCE_COLOR", None)
     subprocess.run(["git", "init", "-q"], cwd=proj, check=True, env=env)
     return proj, env
