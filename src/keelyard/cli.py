@@ -16,6 +16,7 @@ import shlex
 import sys
 import textwrap
 from pathlib import Path
+from typing import Any
 
 from . import __version__, config, session
 from .proc import join_cmd
@@ -165,8 +166,15 @@ def _parser() -> argparse.ArgumentParser:
     p.add_argument("--no-agents", action="store_true", help="create the config but wire no agent")
     p.add_argument("--dry-run", action="store_true", help="print what would change and stop")
     p.add_argument("--preset", choices=["lean", "balanced", "max-quality"], default="lean",
-                   help="lean = default, fewest tokens (trimmed agent prompt/tools, capped output); balanced = all agent tools; "
-                        "max-quality = every keelyard tool over MCP. `keelyard uninstall <agent>` reverts it")
+                   help="lean = default, fewer tokens (no MCP catalog, short rules, capped output); never disables an agent tool; "
+                        "balanced = lean without the config defaults; max-quality = every keelyard tool over MCP. "
+                        "`keelyard uninstall <agent>` reverts it")
+    p.add_argument("--trim", action="store_true",
+                   help="OPT-IN, restrictive: also replace OpenCode's build prompt and turn off its webfetch/task/question/grep/glob/"
+                        "todo tools, and cap Claude Code's tool output via env. Saves more tokens, removes capabilities")
+    p.add_argument("-y", "--yes", action="store_true",
+                   help="apply without asking when keelyard would change a config file of yours (see the diff with --dry-run; "
+                        "originals are kept in .keelyard/originals/ or <file>.keelyard-backup)")
     p.add_argument("--codex-project-mcp", action="store_true",
                    help="Codex: register the keelyard MCP server in this project's .codex/config.toml instead of asking you to edit "
                         "~/.codex/config.toml (Codex reads it only for trusted projects)")
@@ -190,7 +198,10 @@ def _parser() -> argparse.ArgumentParser:
         if name == "install":
             p.add_argument("--no-terse", dest="terse", action="store_false", help="leave out the terse-output rule")
             p.add_argument("--preset", choices=["lean", "balanced", "max-quality"], default="lean",
-                           help="lean = default, fewest tokens; see `keelyard init --help`")
+                           help="lean = default, fewer tokens, no tool disabled; see `keelyard init --help`")
+            p.add_argument("--trim", action="store_true", help="OPT-IN, restrictive: see `keelyard init --help`")
+            p.add_argument("-y", "--yes", action="store_true", help="apply without asking when your own config files change")
+            p.add_argument("--dry-run", action="store_true", help="show the diff of what would change and stop")
             p.add_argument("--codex-project-mcp", action="store_true",
                            help="Codex: register the keelyard MCP server in this project's .codex/config.toml instead of asking you to edit "
                         "~/.codex/config.toml (Codex reads it only for trusted projects)")
@@ -327,6 +338,34 @@ def _human(a) -> bool:
     return not getattr(a, "json", False)
 
 
+def _consent(a, changes: list, h: bool) -> bool:
+    """Show what would change in the user's own files; True when it may be applied (--yes, or a typed yes)."""
+    from . import ui
+
+    mods = [c for c in changes if c.kind == "modify"]
+    if h:
+        for c in changes:
+            if c.kind == "create":
+                ui.out.print(f"  [muted]would create[/] {c.path}")
+        for c in mods:
+            ui.out.print(f"\n  [warn]would change your file[/] {c.path}")
+            ui.out.print(c.diff.rstrip("\n"), markup=False, highlight=False)
+    if getattr(a, "dry_run", False):
+        return False
+    if not mods or getattr(a, "yes", False):
+        return True
+    names = ", ".join(c.path for c in mods)
+    if sys.stdin.isatty() and h:
+        ui.out.print()
+        return input("  Apply these changes? Originals are backed up. [y/N] ").strip().lower() in ("y", "yes")
+    raise Fail(f"keelyard would change your own config: {names}. Nothing was changed. "
+               "Hint: review it with --dry-run, then rerun with --yes.")
+
+
+def _changes_json(changes: list) -> list[dict]:
+    return [{"path": c.path, "kind": c.kind, "diff": c.diff} for c in changes]
+
+
 def _do_global(a, remove: bool):
     from . import ui
     from .adapters.install import AGENTS, InstallError, detect, install_global, uninstall_global
@@ -339,9 +378,23 @@ def _do_global(a, remove: bool):
     h = _human(a)
     if h:
         ui.heading("keelyard uninstall --global" if remove else "keelyard init --global", "all projects of this user")
+    kw: dict[str, Any] = {"terse": None if getattr(a, "terse", True) else False, "trim": getattr(a, "trim", False)}
+    if not remove:
+        from .adapters.install import preview_global
+
+        try:
+            changes = [c for x in agents for c in preview_global(x, **kw)]
+        except InstallError as e:
+            raise Fail(str(e)) from None
+        data["diff"] = _changes_json(changes)
+        if not _consent(a, changes, h):
+            if getattr(a, "dry_run", False):
+                return 0, data
+            ui.out.print("  nothing changed.")
+            return 1, data
     for x in agents:
         try:
-            files = uninstall_global(x) if remove else install_global(x, terse=None if getattr(a, "terse", True) else False)
+            files = uninstall_global(x) if remove else install_global(x, **kw)
         except InstallError as e:
             raise Fail(str(e)) from None
         changed[x] = files
@@ -374,23 +427,35 @@ def do_init(a):
             ui.out.print("\n  [muted]agents on this machine[/]")
             for x in AGENTS:
                 ui.line("ok" if x in found else "skip", x, found.get(x, "not found"))
+    kw = {"preset": getattr(a, "preset", "lean"), "codex_project_mcp": getattr(a, "codex_project_mcp", False),
+          "terse": None if getattr(a, "terse", True) else False, "trim": getattr(a, "trim", False)}
+    from .adapters.install import InstallError, preview
+
+    try:
+        changes = [c for x in agents for c in preview(x, root, **kw)]
+    except InstallError as e:
+        raise Fail(str(e)) from None
+    data["diff"] = _changes_json(changes)
     if a.dry_run:
         data["changed"] = [".keelyard/config.toml"] + [f"wire {x}" for x in agents]
         if h:
             ui.out.print("\n  [muted]would create[/] .keelyard/config.toml")
             for x in agents:
                 ui.out.print(f"  [muted]would wire[/]   {x}")
+        _consent(a, changes, h)
         return 0, data
     if h:
         ui.out.print()
+    if not _consent(a, changes, h):
+        ui.out.print("  nothing changed.")
+        return 1, data
     cfg_path = config.init(root, lean=getattr(a, "preset", "lean") == "lean")
     data["changed"].append(str(cfg_path.relative_to(root)))
     if h:
         ui.line("ok", "config", str(cfg_path.relative_to(root)))
     for x in agents:
         was = installed(x, root)
-        items = install(x, root, preset=getattr(a, "preset", "lean"), codex_project_mcp=getattr(a, "codex_project_mcp", False),
-                        terse=None if getattr(a, "terse", True) else False)
+        items = install(x, root, **kw)
         data["changed"] += [f"{x}: {i.splitlines()[0]}" for i in items]
         if h:
             short = []
@@ -471,7 +536,8 @@ def _checks() -> list[tuple[str, str, str, str]]:
         if has:
             pf = root / ".keelyard" / "preset.json"
             preset = json.loads(pf.read_text(encoding="utf-8")).get("preset", "lean") if pf.exists() else "lean"
-            drift = config.lean_drift((root / ".keelyard" / "config.toml").read_text(encoding="utf-8")) if preset == "lean" else []
+            ctext = (root / ".keelyard" / "config.toml").read_text(encoding="utf-8")
+            drift = config.lean_drift(ctext, config.has_tests(root, ctext)) if preset == "lean" else []
             rows.append(("project", "warn" if drift else "ok", "lean defaults",
                          ("overridden: " + "; ".join(drift) + ". The ~80% bench saving assumes these") if drift else f"preset {preset}"))
     except config.ProjectError as e:
@@ -1152,10 +1218,19 @@ def do_install(a):
         raise Fail(f"name an agent: keelyard {a.cmd} claude|codex|opencode, or use --global.")
     root = config.find_root()
     if a.cmd == "install":
-        config.init(root, lean=getattr(a, "preset", "lean") == "lean")
-    if a.cmd == "install":
-        done = inst.install(a.agent, root, preset=getattr(a, "preset", "lean"), codex_project_mcp=getattr(a, "codex_project_mcp", False),
-                            terse=None if getattr(a, "terse", True) else False)
+        kw = {"preset": getattr(a, "preset", "lean"), "codex_project_mcp": getattr(a, "codex_project_mcp", False),
+              "terse": None if getattr(a, "terse", True) else False, "trim": getattr(a, "trim", False)}
+        try:
+            changes = inst.preview(a.agent, root, **kw)
+        except inst.InstallError as e:
+            raise Fail(str(e)) from None
+        if not _consent(a, changes, _human(a)):
+            if getattr(a, "dry_run", False):
+                return 0, {"agent": a.agent, "action": a.cmd, "changed": [], "diff": _changes_json(changes)}
+            ui.out.print("  nothing changed.")
+            return 1, {"agent": a.agent, "action": a.cmd, "changed": [], "diff": _changes_json(changes)}
+        config.init(root, lean=kw["preset"] == "lean")
+        done = inst.install(a.agent, root, **kw)
     else:
         done = inst.uninstall(a.agent, root)
     if _human(a):

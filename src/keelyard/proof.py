@@ -339,6 +339,11 @@ class Proof:
             return [f"Requirement #{r['id']} not verified: {r['text']}" for r in b.requirements if not r["done"]]
         gaps = []
         after = [t for t in b.test_runs if t["phase"] == "after" and t["ts"] >= last_edit]
+        if not after and not b.test_runs and not (self.opts.get("test_cmd") or detect_test_cmd(self.cfg.root)):
+            # no test suite here: there is nothing to run, so "run the tests" is not a gap (a checklist still is)
+            gaps += [f"Requirement #{r['id']} not verified: {r['text']}" for r in b.requirements if not r["done"]]
+            return gaps + [f"Tests weakened: {w}. Restore it, or if this is a real refactor: "
+                           "`keelyard proof accept-tests \"<why>\"` (shown to the user as agent-claimed)." for w in self.weakened()]
         auto_ok = self.opts.get("auto_requirements", True) and after and after[-1]["exit"] == 0
         failing = bool(after) and after[-1]["exit"] != 0
         if not b.requirements and not auto_ok and not failing:  # a red test is the one thing to fix first

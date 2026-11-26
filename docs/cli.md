@@ -82,8 +82,8 @@ Run `keelyard <command> --help` for examples. Every command accepts --json.
 
 ```text
 usage: keelyard init [-h] [--json] [--agent {claude,codex,opencode}] [--no-agents] [--dry-run]
-                     [--preset {lean,balanced,max-quality}] [--codex-project-mcp] [--no-terse]
-                     [--global]
+                     [--preset {lean,balanced,max-quality}] [--trim] [-y] [--codex-project-mcp]
+                     [--no-terse] [--global]
 
 set up this project and wire the agents found on this machine
 
@@ -93,11 +93,16 @@ options:
   --agent {claude,codex,opencode}
                         wire only this agent (repeatable)
   --no-agents           create the config but wire no agent
-  --dry-run             print what would change and stop
+  --dry-run             print what would change (with a diff of your own files) and stop
   --preset {lean,balanced,max-quality}
-                        lean = default, fewest tokens (trimmed agent prompt/tools, capped output);
-                        balanced = all agent tools; max-quality = every keelyard tool over MCP.
+                        lean = default, fewer tokens (no MCP catalog, short rules, capped output);
+                        never disables an agent tool; balanced = lean without the config defaults;
+                        max-quality = every keelyard tool over MCP.
                         `keelyard uninstall <agent>` reverts it
+  --trim                OPT-IN, restrictive: also replace OpenCode's build prompt and turn off its
+                        webfetch/task/question/grep/glob/todo tools, and cap Claude Code's tool
+                        output via env. Saves more tokens, removes capabilities
+  -y, --yes             apply without asking when keelyard would change a config file of yours
   --codex-project-mcp   Codex: register the keelyard MCP server in this project's
                         .codex/config.toml instead of asking you to edit ~/.codex/config.toml
                         (Codex reads it only for trusted projects)
@@ -808,7 +813,7 @@ options:
   --global              wire at user level (all agents if none named)
   --no-terse            leave out the terse-output rule
   --preset {lean,balanced,max-quality}
-                        lean = default, fewest tokens; see `keelyard init --help`
+                        lean = default, fewer tokens, no tool disabled; see `keelyard init --help`
   --codex-project-mcp   Codex: register the keelyard MCP server in this project's
                         .codex/config.toml instead of asking you to edit ~/.codex/config.toml
                         (Codex reads it only for trusted projects)

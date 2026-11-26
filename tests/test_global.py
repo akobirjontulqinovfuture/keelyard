@@ -40,7 +40,7 @@ def test_global_install_wires_all_agents_keeps_user_settings_and_backs_up(home, 
     (home / ".codex").mkdir()
     (home / ".codex" / "config.toml").write_text('model = "o4"\n')
     for _ in range(2):  # idempotent
-        r = ky("init", "--global", "--json", cwd=home)
+        r = ky("init", "--global", "--json", "--yes", cwd=home)
         assert r.returncode == 0, r.stderr
     s = json.loads((home / ".claude" / "settings.json").read_text())
     assert s["theme"] == "dark"
@@ -63,7 +63,7 @@ def test_global_install_wires_all_agents_keeps_user_settings_and_backs_up(home, 
 def test_global_uninstall_removes_only_keelyard(home):
     (home / ".codex").mkdir()
     (home / ".codex" / "config.toml").write_text('model = "o4"\n')
-    assert ky("init", "--global", cwd=home).returncode == 0
+    assert ky("init", "--global", "--yes", cwd=home).returncode == 0
     r = ky("uninstall", "--global", "--json", cwd=home)
     assert r.returncode == 0, r.stderr
     assert (home / ".codex" / "config.toml").read_text().strip() == 'model = "o4"'
@@ -75,7 +75,7 @@ def test_global_uninstall_removes_only_keelyard(home):
 
 
 def test_first_session_sets_up_a_project_automatically(home, tmp_path):
-    assert ky("init", "--global", cwd=home).returncode == 0
+    assert ky("init", "--global", "--yes", cwd=home).returncode == 0
     proj = tmp_path / "newproj"
     proj.mkdir()
     subprocess.run(["git", "init", "-q"], cwd=proj, check=True)
@@ -94,7 +94,7 @@ def test_first_session_sets_up_a_project_automatically(home, tmp_path):
 
 
 def test_doctor_json_reports_global_wiring(home):
-    assert ky("init", "--global", cwd=home).returncode == 0
+    assert ky("init", "--global", "--yes", cwd=home).returncode == 0
     d = json.loads(ky("doctor", "--json", cwd=home).stdout)
     g = {c["check"]: c for c in d["checks"] if c["section"] == "global"}
     assert set(g) == {"claude", "codex", "opencode"} and all(c["state"] == "ok" for c in g.values())

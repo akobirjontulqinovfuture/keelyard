@@ -222,16 +222,30 @@ LEAN_LINES = {"inline_files_tokens = 0": "inline_files_tokens = 1500",
               "auto_test_after_edit = false": "auto_test_after_edit = true"}
 
 
-def apply_lean(text: str) -> str:
+def has_tests(root: Path, text: str = "") -> bool:
+    """True when the project has a test command: `[proof].test_cmd` in the config text, or one keelyard detects."""
+    from .proof import detect_test_cmd
+
+    if re.search(r'(?m)^test_cmd\s*=\s*"[^"]+"', text):
+        return True
+    return bool(detect_test_cmd(root))
+
+
+def apply_lean(text: str, tests: bool = True) -> str:
+    """Lean defaults; the test-after-edit line only when the project has tests (nothing to run otherwise)."""
     for old, new in LEAN_LINES.items():
+        if not tests and old.startswith("auto_test_after_edit"):
+            continue
         text = re.sub(rf"(?m)^{re.escape(old)}$", new, text)
     return text
 
 
-def lean_drift(text: str) -> list[str]:
+def lean_drift(text: str, tests: bool = True) -> list[str]:
     """Lean settings missing from a config text (a default line still there, or a line set to another value)."""
     out = []
     for new in LEAN_LINES.values():
+        if not tests and new.startswith("auto_test_after_edit"):
+            continue
         key = new.split(" = ")[0]
         m = re.search(rf"(?m)^{key} = (.*)$", text)
         if not m or f"{key} = {m.group(1).strip()}" != new:
@@ -246,7 +260,7 @@ def init(root: Path, lean: bool = True) -> Path:
         raise ProjectError(f"refusing to set up keelyard in {root}. Hint: cd into a project folder first.")
     path = cfg.state / "config.toml"
     if not path.exists():
-        path.write_text(apply_lean(DEFAULT_CONFIG) if lean else DEFAULT_CONFIG, encoding="utf-8")
+        path.write_text(apply_lean(DEFAULT_CONFIG, has_tests(root)) if lean else DEFAULT_CONFIG, encoding="utf-8")
     return path
 
 
@@ -264,7 +278,7 @@ def migrate_lean(cfg: Config) -> bool:
     if preset != "lean" or not path.exists():
         return False
     text = path.read_text(encoding="utf-8")
-    new = apply_lean(text)
+    new = apply_lean(text, has_tests(cfg.root, text))
     if new == text:
         return False
     path.write_text(new, encoding="utf-8")

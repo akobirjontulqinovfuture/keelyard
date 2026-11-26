@@ -11,10 +11,10 @@ def test_presets_known():
     assert set(PRESETS) == {"lean", "balanced", "max-quality"}
 
 
-def test_lean_opencode_trims_agent_and_uninstall_restores(project, monkeypatch):
+def test_trim_opencode_trims_agent_and_uninstall_restores(project, monkeypatch):
     monkeypatch.setattr("keelyard.adapters.install._opencode_major", lambda: 2)
     (project / "opencode.json").write_text(json.dumps({"theme": "dark"}))
-    install("opencode", project, preset="lean")
+    install("opencode", project, preset="lean", trim=True)
     oc = json.loads((project / "opencode.json").read_text())
     build = oc["agents"]["build"]
     assert len(build["system"]) < 600
@@ -27,11 +27,11 @@ def test_lean_opencode_trims_agent_and_uninstall_restores(project, monkeypatch):
     assert json.loads((project / "opencode.json").read_text()) == {"theme": "dark"}
 
 
-def test_lean_opencode_v1_config_and_restore(project, monkeypatch):
-    """OpenCode 1.x rejects V2 `agents`/`permissions`; lean writes the V1 shape there and uninstall removes it."""
+def test_trim_opencode_v1_config_and_restore(project, monkeypatch):
+    """OpenCode 1.x rejects V2 `agents`/`permissions`; --trim writes the V1 shape there and uninstall removes it."""
     monkeypatch.setattr("keelyard.adapters.install._opencode_major", lambda: 1)
     (project / "opencode.json").write_text(json.dumps({"theme": "dark"}))
-    install("opencode", project, preset="lean")
+    install("opencode", project, preset="lean", trim=True)
     oc = json.loads((project / "opencode.json").read_text())
     assert "agents" not in oc
     build = oc["agent"]["build"]
@@ -43,17 +43,17 @@ def test_lean_opencode_v1_config_and_restore(project, monkeypatch):
     assert json.loads((project / "opencode.json").read_text()) == {"theme": "dark"}
 
 
-def test_lean_keeps_user_agent_settings(project, monkeypatch):
+def test_trim_keeps_user_agent_settings(project, monkeypatch):
     monkeypatch.setattr("keelyard.adapters.install._opencode_major", lambda: 2)
     (project / "opencode.json").write_text(json.dumps({"agents": {"build": {"system": "mine"}}}))
-    install("opencode", project, preset="lean")
+    install("opencode", project, preset="lean", trim=True)
     assert json.loads((project / "opencode.json").read_text())["agents"]["build"] == {"system": "mine"}
 
 
-def test_lean_claude_env_and_restore(project):
+def test_trim_claude_env_and_restore(project):
     (project / ".claude").mkdir()
     (project / ".claude" / "settings.json").write_text(json.dumps({"env": {"BASH_MAX_OUTPUT_LENGTH": "99"}}))
-    install("claude", project, preset="lean")
+    install("claude", project, preset="lean", trim=True)
     env = json.loads((project / ".claude" / "settings.json").read_text())["env"]
     assert env["BASH_MAX_OUTPUT_LENGTH"] == "99"  # the user's value wins
     assert env["DISABLE_NON_ESSENTIAL_MODEL_CALLS"] == "1"
@@ -81,3 +81,29 @@ def test_lean_sets_keelyard_config(project):
     c = config.load(project)
     assert c.section("brain")["inline_files_tokens"] == 1500
     assert c.section("proof")["auto_test_after_edit"] is True
+
+
+def test_lean_alone_never_touches_agent_config(project):
+    """The reported bug: plain lean rewrote opencode.json and Claude env. It must leave both alone."""
+    (project / "opencode.json").write_text(json.dumps({"theme": "dark"}))
+    (project / ".claude").mkdir()
+    (project / ".claude" / "settings.json").write_text(json.dumps({"env": {"A": "1"}}))
+    install("opencode", project, preset="lean")
+    install("claude", project, preset="lean")
+    assert json.loads((project / "opencode.json").read_text()) == {"theme": "dark"}
+    assert json.loads((project / ".claude" / "settings.json").read_text())["env"] == {"A": "1"}
+
+
+def test_rerun_without_trim_removes_earlier_trim(project, monkeypatch):
+    monkeypatch.setattr("keelyard.adapters.install._opencode_major", lambda: 2)
+    (project / "opencode.json").write_text(json.dumps({"theme": "dark"}))
+    install("opencode", project, preset="lean", trim=True)
+    assert "agents" in json.loads((project / "opencode.json").read_text())
+    install("opencode", project, preset="lean")
+    assert json.loads((project / "opencode.json").read_text()) == {"theme": "dark"}
+
+
+def test_trim_keeps_core_tools_documented_list():
+    from keelyard.adapters.install import LEAN_OPENCODE_BUILD
+
+    assert LEAN_OPENCODE_BUILD["permissions"]  # only reachable through --trim (opt-in)

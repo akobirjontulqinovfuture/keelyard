@@ -2,12 +2,15 @@
 
 from __future__ import annotations
 
+import difflib
 import json
 import os
 import re
 import shlex
 import shutil
 import subprocess
+import tempfile
+from dataclasses import dataclass
 from importlib import resources
 from pathlib import Path
 
@@ -154,7 +157,8 @@ def _command(name: str) -> str:
 
 
 PRESETS = {
-    "lean": "default (keelyard init): fewest tokens: trimmed agent prompt and tools, no MCP catalog, short rules, capped tool output",
+    "lean": ("default (keelyard init): fewer tokens: no MCP catalog, short rules, files in the brief, tests after edits "
+             "when the project has tests. Never disables an agent tool; add --trim for the restrictive extras"),
     "balanced": "every agent tool kept: hooks, proof from shell test runs, filtered output; MCP only where it is cheap",
     "max-quality": "every keelyard tool over MCP, full rules; costs more tokens per turn",
 }
@@ -212,8 +216,10 @@ def _preset_file(root: Path) -> Path:
     return root / ".keelyard" / "preset.json"
 
 
-def _apply_preset(agent: str, root: Path, preset: str) -> list[str]:
-    """Write the preset's agent settings and remember exactly what was added, so uninstall can take it back."""
+def _apply_preset(agent: str, root: Path, preset: str, trim: bool = False) -> list[str]:
+    """Write the preset's keelyard config and remember what was added, so uninstall can take it back. The
+    restrictive agent tweaks (OpenCode build-agent override, Claude Code env caps) only go in with trim=True
+    (`--trim`); a plain install also removes ones an older keelyard added."""
     pf = _preset_file(root)
     rec = json.loads(pf.read_text(encoding="utf-8")) if pf.exists() else {}
     rec["preset"] = preset
@@ -225,8 +231,10 @@ def _apply_preset(agent: str, root: Path, preset: str) -> list[str]:
         from ..config import apply_lean
 
         cfg_path.write_text(apply_lean(cfg_path.read_text(encoding="utf-8")), encoding="utf-8")
-        done.append(".keelyard/config.toml (lean: project files in the brief, tests run after each edit)")
-    if preset == "lean" and agent == "opencode":
+        done.append(".keelyard/config.toml (lean: project files in the brief; tests run after each edit when the project has tests)")
+    if not trim:
+        done += _remove_trim(agent, root, rec)
+    if trim and preset == "lean" and agent == "opencode":
         path = root / "opencode.json"
         data = _read_json(path)
         v1 = _opencode_major() < 2
@@ -236,8 +244,8 @@ def _apply_preset(agent: str, root: Path, preset: str) -> list[str]:
             agents["build"] = want
             _write_json(path, data)
             added["opencode_build"] = key
-            done.append("opencode.json (lean build agent: short prompt, 9 tools off)")
-    if preset == "lean" and agent == "claude":
+            done.append("opencode.json (--trim: short build prompt, 9 tools off)")
+    if trim and preset == "lean" and agent == "claude":
         path = root / ".claude" / "settings.json"
         data = _read_json(path)
         env = data.setdefault("env", {})
@@ -246,18 +254,15 @@ def _apply_preset(agent: str, root: Path, preset: str) -> list[str]:
             env[k] = LEAN_CLAUDE_ENV[k]
         _write_json(path, data)
         added["claude_env"] = sorted(set(added.get("claude_env", [])) | set(keys))
-        done.append(".claude/settings.json (lean env: capped tool output, no extra model calls)")
+        done.append(".claude/settings.json (--trim: capped tool output, no extra model calls)")
     pf.parent.mkdir(parents=True, exist_ok=True)
     pf.write_text(json.dumps(rec, indent=1), encoding="utf-8")
     return done
 
 
-def _remove_preset(agent: str, root: Path) -> list[str]:
-    pf = _preset_file(root)
-    if not pf.exists():
-        return []
-    rec = json.loads(pf.read_text(encoding="utf-8"))
-    added, done = rec.get("added", {}), []
+def _remove_trim(agent: str, root: Path, rec: dict) -> list[str]:
+    """Take back the `--trim` tweaks recorded in `rec` (and nothing else)."""
+    added, done = rec.setdefault("added", {}), []
     if agent == "opencode" and added.pop("opencode_build", None):
         path = root / "opencode.json"
         data = _read_json(path) if path.exists() else {}
@@ -267,7 +272,7 @@ def _remove_preset(agent: str, root: Path) -> list[str]:
                 if not data[key]:
                     del data[key]
                 _write_json(path, data)
-                done.append("opencode.json (lean build agent)")
+                done.append("opencode.json (trimmed build agent)")
     if agent == "claude" and added.get("claude_env"):
         path = root / ".claude" / "settings.json"
         data = _read_json(path) if path.exists() else {}
@@ -278,8 +283,17 @@ def _remove_preset(agent: str, root: Path) -> list[str]:
         if "env" in data and not env:
             del data["env"]
         _write_json(path, data)
-        done.append(".claude/settings.json (lean env)")
-    if added:
+        done.append(".claude/settings.json (trim env)")
+    return done
+
+
+def _remove_preset(agent: str, root: Path) -> list[str]:
+    pf = _preset_file(root)
+    if not pf.exists():
+        return []
+    rec = json.loads(pf.read_text(encoding="utf-8"))
+    done = _remove_trim(agent, root, rec)
+    if rec.get("added"):
         pf.write_text(json.dumps(rec, indent=1), encoding="utf-8")
     else:
         pf.unlink()
@@ -386,7 +400,7 @@ def uninstall_guides(agent: str, root: Path) -> list[str]:
 
 
 def install(agent: str, root: Path, preset: str = "lean", codex_project_mcp: bool = False,
-            terse: bool | None = None) -> list[str]:
+            terse: bool | None = None, trim: bool = False) -> list[str]:
     global _PRESET, _TERSE
     if agent not in AGENTS:
         raise InstallError(f"unknown agent {agent!r}. Hint: choose one of {', '.join(AGENTS)}.")
@@ -396,7 +410,7 @@ def install(agent: str, root: Path, preset: str = "lean", codex_project_mcp: boo
     _TERSE = terse_default() if terse is None else terse
     _remember_originals(agent, root)
     try:
-        return _install(agent, root, codex_project_mcp) + _apply_preset(agent, root, preset)
+        return _install(agent, root, codex_project_mcp) + _apply_preset(agent, root, preset, trim)
     finally:
         _PRESET, _TERSE = "balanced", True
 
@@ -593,7 +607,7 @@ def _drop_key(path: Path, key: str) -> bool:
     return True
 
 
-def install_global(agent: str, home: Path | None = None, terse: bool | None = None) -> list[str]:
+def install_global(agent: str, home: Path | None = None, terse: bool | None = None, trim: bool = False) -> list[str]:
     """Wire one agent for every project of this user. Existing files are backed up once and merged, never replaced."""
     if agent not in AGENTS:
         raise InstallError(f"unknown agent {agent!r}. Hint: choose one of {', '.join(AGENTS)}.")
@@ -619,7 +633,7 @@ def install_global(agent: str, home: Path | None = None, terse: bool | None = No
         for name in WORKFLOWS:
             (cmds / f"{name}.md").write_text(_command(name), encoding="utf-8")
         done += [str(p["claude_settings"]), str(p["claude_json"]), str(p["claude_md"])]
-        _global_lean(agent, p, True)
+        _global_lean(agent, p, trim)
     elif agent == "codex":
         for k in ("codex_toml", "codex_hooks", "codex_md"):
             _backup(p[k])
@@ -640,15 +654,15 @@ def install_global(agent: str, home: Path | None = None, terse: bool | None = No
         for name in WORKFLOWS:
             (cmds / f"keelyard-{name}.md").write_text(_command(name), encoding="utf-8")
         done += [str(p["opencode_json"]), str(p["opencode_plugin"]), str(p["opencode_md"])]
-        if not opencode_mcp():
-            _global_lean(agent, p, True)
+        _global_lean(agent, p, trim and not opencode_mcp())
     _set_global_marker(agent, True)
     return done
 
 
 def _global_lean(agent: str, p: dict[str, Path], on: bool) -> None:
-    """The lean preset at user level: OpenCode's trimmed build agent, Claude Code's lean env. Only what is absent
-    is added, and what was added is recorded so uninstall_global takes back exactly that."""
+    """The opt-in `--trim` tweaks at user level: OpenCode's trimmed build agent, Claude Code's capped env. Only what is
+    absent is added, and what was added is recorded so uninstall_global (or a rerun without --trim) takes back
+    exactly that. on=False only removes."""
     m = _marker()
     rec = json.loads(m.read_text(encoding="utf-8")) if m.exists() else {}
     added = rec.setdefault("lean_added", {})
@@ -692,18 +706,25 @@ def _global_lean(agent: str, p: dict[str, Path], on: bool) -> None:
 
 
 def global_lean_state(home: Path | None = None) -> dict[str, list[str]]:
-    """Per globally wired agent: which lean settings are missing or overridden at user level (empty = lean)."""
+    """Per globally wired agent that was trimmed (`--trim`): which trim settings are missing or overridden."""
     p, out = global_paths(home), {}
+    try:
+        trimmed = json.loads(_marker().read_text(encoding="utf-8")).get("lean_added", {})
+    except (OSError, ValueError):
+        trimmed = {}
     for agent in global_agents():
-        gaps = []
+        gaps: list[str] = []
+        if not trimmed.get(agent):
+            out[agent] = gaps
+            continue
         if agent == "opencode" and not os.environ.get("KEELYARD_OPENCODE_MCP"):
             data = _read_json(p["opencode_json"]) if p["opencode_json"].exists() else {}
             b = data.get("agents", {}).get("build") or data.get("agent", {}).get("build")
             if not (_is_lean_build(b, LEAN_OPENCODE_BUILD) or _is_lean_build(b, LEAN_OPENCODE_BUILD_V1)):
-                gaps.append("opencode.json build agent is not keelyard's lean one")
+                gaps.append("opencode.json build agent is not keelyard's trimmed one")
         if agent == "claude":
             env = (_read_json(p["claude_settings"]) if p["claude_settings"].exists() else {}).get("env", {})
-            gaps += [f"{k}={env.get(k, '(unset)')} (lean: {v})" for k, v in LEAN_CLAUDE_ENV.items() if env.get(k) != v]
+            gaps += [f"{k}={env.get(k, '(unset)')} (trim: {v})" for k, v in LEAN_CLAUDE_ENV.items() if env.get(k) != v]
         out[agent] = gaps
     return out
 
@@ -781,3 +802,75 @@ def installed_global(agent: str, home: Path | None = None) -> bool:
     except OSError:
         return False
     return "keelyard" in t and " hook " in t
+
+
+# --------------------------------------------------------------------------- preview: what would change in YOUR files
+@dataclass
+class Change:
+    path: str       # as shown to the user (project-relative, or the full path for user-level files)
+    kind: str       # "modify" = a file of yours that exists; "create" = a new file
+    diff: str       # unified diff ("" for a new file)
+
+
+def _diff(label: str, before: bytes | None, after: bytes | None) -> Change | None:
+    if before == after or after is None:
+        return None
+    if before is None:
+        return Change(label, "create", "")
+    a = before.decode("utf-8", "replace").splitlines(keepends=True)
+    b = after.decode("utf-8", "replace").splitlines(keepends=True)
+    return Change(label, "modify", "".join(difflib.unified_diff(a, b, f"a/{label}", f"b/{label}")))
+
+
+def preview(agent: str, root: Path, **kw) -> list[Change]:
+    """Run the install on a copy of the files it touches and report what it would change. Nothing real is written."""
+    if agent not in AGENTS:
+        raise InstallError(f"unknown agent {agent!r}. Hint: choose one of {', '.join(AGENTS)}.")
+    out = []
+    with tempfile.TemporaryDirectory(prefix="keelyard-preview-") as td:
+        tmp = Path(td)
+        rels = list(dict.fromkeys(TOUCHED[agent]))
+        plugins = [".opencode/plugins/keelyard.js", ".opencode/plugin/keelyard.js"]
+        copy = rels + [r for x in AGENTS for r in TOUCHED[x] if r not in rels] + plugins
+        for rel in copy:  # every agent's files, so shared-file choices (AGENTS.md block) match the real project
+            if (root / rel).is_file():
+                (tmp / rel).parent.mkdir(parents=True, exist_ok=True)
+                shutil.copy2(root / rel, tmp / rel)
+        install(agent, tmp, **kw)
+        for rel in rels:
+            real = (root / rel).read_bytes() if (root / rel).is_file() else None
+            new = (tmp / rel).read_bytes() if (tmp / rel).is_file() else None
+            c = _diff(rel, real, new)
+            if c:
+                out.append(c)
+    return out
+
+
+def preview_global(agent: str, home: Path | None = None, **kw) -> list[Change]:
+    """The same for user-level files (~/.claude, ~/.codex, ~/.config/opencode)."""
+    real = global_paths(home)
+    keys = ["claude_settings", "claude_json", "claude_md", "codex_toml", "codex_hooks", "codex_md", "opencode_json", "opencode_md"]
+    out = []
+    saved = {k: os.environ.get(k) for k in ("XDG_CONFIG_HOME", "XDG_DATA_HOME")}
+    with tempfile.TemporaryDirectory(prefix="keelyard-preview-") as td:
+        tmp = Path(td)
+        os.environ["XDG_CONFIG_HOME"], os.environ["XDG_DATA_HOME"] = str(tmp / ".config"), str(tmp / ".local" / "share")
+        try:
+            fake = global_paths(tmp)
+            for k in keys:
+                if real[k].is_file():
+                    fake[k].parent.mkdir(parents=True, exist_ok=True)
+                    shutil.copy2(real[k], fake[k])
+            install_global(agent, tmp, **kw)
+            for k in keys:
+                c = _diff(str(real[k]), real[k].read_bytes() if real[k].is_file() else None,
+                          fake[k].read_bytes() if fake[k].is_file() else None)
+                if c:
+                    out.append(c)
+        finally:
+            for k, v in saved.items():
+                if v is None:
+                    os.environ.pop(k, None)
+                else:
+                    os.environ[k] = v
+    return out

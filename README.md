@@ -110,9 +110,14 @@ In the recording, the agent deletes three tests to get a green run and then trie
 ```bash
 pip install keelyard          # or pipx install keelyard
 cd your-project
-keelyard init --preset lean   # wires Claude Code, Codex and OpenCode; fewest tokens
+keelyard init --dry-run       # see the exact diff of every file it would touch (nothing is written)
+keelyard init                 # wires Claude Code, Codex and OpenCode (asks before changing a file of yours)
 keelyard doctor               # everything green?
 ```
+
+`init` never edits an existing config file of yours silently: it shows a diff and asks first (`--yes` skips the
+question in scripts), keeps the original, and `keelyard uninstall <agent>` puts it back byte for byte. The default
+`lean` preset does **not** turn any agent tool off or replace any agent prompt.
 
 Use your agent as usual. `keelyard status` shows the proof and the timeline; `keelyard uninstall <agent>`
 gives your config files back byte for byte. Latest `main` instead of the PyPI release:
@@ -120,7 +125,9 @@ gives your config files back byte for byte. Latest `main` instead of the PyPI re
 
 > **Real runs (OpenCode 2, Windows, free model, $0):** with the lean preset, mean input tokens per session fell
 > **14.2×** on a noisy 1,566-test task and **6.0×** on a small 66-test task (5 baseline vs 3 lean runs, all tests
-> passing). Uncached input alone: 9.5× and 4.5×. Lean turns some agent tools off. No cost claim: the model was free.
+> passing). Uncached input alone: 9.5× and 4.5×. Those runs used the restrictive extras that are now opt-in
+> (`--trim`: OpenCode's short build prompt with webfetch, task, question, grep, glob and todo off); the default
+> `lean` keeps every agent tool and saves less. No cost claim: the model was free.
 > [BENCHMARKS.md](https://github.com/akobirjontulqinovfuture/keelyard/blob/main/BENCHMARKS.md#lean-preset-v2-repeated-runs-oct-15-2026)
 
 ## What keelyard changes on your machine
@@ -132,7 +139,9 @@ gives your config files back byte for byte. Latest `main` instead of the PyPI re
   Nothing is written at pip install time; there are no install scripts or post-install hooks.
 - Agent config it edits: hooks and MCP entries (`.claude/settings.json`, `.mcp.json`, `.codex/hooks.json`,
   `opencode.json`, or the `~/` equivalents with `--global`) and a block between `<!-- keelyard:start -->` and
-  `<!-- keelyard:end -->` in `CLAUDE.md` / `AGENTS.md`. Originals are kept as `<file>.keelyard-backup`.
+  `<!-- keelyard:end -->` in `CLAUDE.md` / `AGENTS.md`. `init` shows a diff and asks before it changes a file of yours (`--dry-run` only shows it; `--yes` skips the question).
+  Originals are kept as `<file>.keelyard-backup` (user level) or in `.keelyard/originals/` (project), and
+  `keelyard uninstall` restores them. `--trim` (off by default) is the only option that edits agent tool settings.
 - Project state lives in `.keelyard/` (config, `shadow.git` snapshots). Snapshots use a separate git dir;
   your own `.git` is never read or written by rewind.
 - Memory: `$XDG_DATA_HOME/keelyard/memory.db` (mode 600, redacted).

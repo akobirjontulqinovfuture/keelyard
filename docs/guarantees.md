@@ -56,7 +56,9 @@ It is not a sandbox. This page lists exactly what holds and where the limits are
   guarantee for other models or for every model (`BENCHMARKS.md`).
 - JSON output is compacted only losslessly (minified, same-key lists as columns/rows) and only when smaller.
 - A failing test run identical to an earlier failure on different code adds one ~40-token hint; nothing otherwise.
-- The lean preset saves tokens partly by **turning tools off** (9 OpenCode built-ins, keelyard's MCP list).
+- The default lean preset turns **no agent tool off** and replaces no agent prompt. Only `--trim` (opt-in) does:
+  it replaces OpenCode's build prompt and turns off its webfetch, websearch, task, skill, question, todo, grep, glob
+  and execute tools, and caps Claude Code's tool output via env. Lean does leave keelyard's own MCP list off in OpenCode.
 - Benchmarks used a free model, so there is no cost claim. See [BENCHMARKS](BENCHMARKS.md) for the split
   between cached and uncached input.
 
